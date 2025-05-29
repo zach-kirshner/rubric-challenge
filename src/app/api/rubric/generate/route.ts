@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import logger from '@/lib/logger'
+import { getModelForTask, TASK_CONFIGS } from '@/lib/anthropic-config'
 
 // In-memory storage for email-name pairs (in production, use database)
 const userRegistry: Map<string, string> = new Map()
@@ -250,9 +251,9 @@ Return the rubric as JSON:
 }`
 
       const message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4000,
-        temperature: 0.7,
+        model: getModelForTask('rubricGeneration'),
+        max_tokens: TASK_CONFIGS.rubricGeneration.maxTokens,
+        temperature: TASK_CONFIGS.rubricGeneration.temperature,
         system: systemPrompt,
         messages: [
           {

@@ -4,6 +4,7 @@ import databaseService from '@/lib/database-service'
 import Anthropic from '@anthropic-ai/sdk'
 import { RUBRIC_GRADER_SYSTEM_PROMPT } from '@/lib/rubric-grader-prompt'
 import { PROMPT_GRADER_SYSTEM_PROMPT } from '@/lib/prompt-grader-prompt'
+import { getModelForTask, TASK_CONFIGS } from '@/lib/anthropic-config'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -153,9 +154,9 @@ Provide your assessment in the specified JSON format.`
 
   // Call Claude to grade the rubric
   const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 2000,
-    temperature: 0.3,
+    model: getModelForTask('rubricGrading'),
+    max_tokens: TASK_CONFIGS.rubricGrading.maxTokens,
+    temperature: TASK_CONFIGS.rubricGrading.temperature,
     system: RUBRIC_GRADER_SYSTEM_PROMPT,
     messages: [
       {
@@ -193,9 +194,9 @@ Analyze this prompt carefully across all dimensions and provide your evaluation 
 
     // Call Claude to grade the prompt
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2000,
-      temperature: 0.3,
+      model: getModelForTask('promptGrading'),
+      max_tokens: TASK_CONFIGS.promptGrading.maxTokens,
+      temperature: TASK_CONFIGS.promptGrading.temperature,
       system: PROMPT_GRADER_SYSTEM_PROMPT,
       messages: [
         {

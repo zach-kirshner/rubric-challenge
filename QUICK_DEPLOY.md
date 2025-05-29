@@ -71,7 +71,7 @@ npx vercel --prod
 ## Your App URLs
 
 - Development: http://localhost:3000
-- Production: https://rubric-builder-[your-username].vercel.app
+- Production: https://rubric-challenge-xptp.vercel.app/prompt
 
 ## Troubleshooting
 

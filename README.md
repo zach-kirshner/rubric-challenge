@@ -42,7 +42,7 @@ DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
 
 # Claude API
 CLAUDE_API_KEY="sk-ant-api03-..."
-DEFAULT_MODEL="claude-3-5-sonnet-20241022"
+DEFAULT_MODEL="claude-4-sonnet"  # Options: claude-4-opus, claude-4-sonnet, claude-3.5-sonnet
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
