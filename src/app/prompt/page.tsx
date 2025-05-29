@@ -218,6 +218,51 @@ export default function PromptPage() {
 
           {showInstructions && (
             <div className="mt-4 space-y-6 animate-slide-down">
+              {/* Challenge Overview */}
+              <div className="card card-elevated">
+                <div className="flex items-start gap-3 mb-4">
+                  <Zap className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
+                  <div className="w-full">
+                    <h3 className="font-semibold text-lg mb-2">Challenge Overview</h3>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Welcome to the HFC Rubric Challenge! Your mission is to create challenging tasks that test the capabilities 
+                      of advanced AI models. You'll design prompts that require genuine reasoning and analysis, then help define 
+                      how to evaluate the quality of responses.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
+                        <h4 className="font-medium text-sm mb-2">What You'll Create:</h4>
+                        <ol className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          <li className="flex items-start gap-2">
+                            <span className="font-medium" style={{ color: 'var(--gradient-mid)' }}>1.</span>
+                            <div>
+                              <span className="font-medium">A Task Prompt</span> - An open-ended challenge that requires analysis, 
+                              synthesis, or creative problem-solving (not just information lookup)
+                            </div>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="font-medium" style={{ color: 'var(--gradient-mid)' }}>2.</span>
+                            <div>
+                              <span className="font-medium">A Rubric</span> - A set of specific criteria that define what makes 
+                              a high-quality response to your prompt
+                            </div>
+                          </li>
+                        </ol>
+                      </div>
+                      
+                      <div className="flex items-start gap-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                        <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                        <p>
+                          Your challenge will help train and evaluate AI systems to produce better, more comprehensive responses 
+                          to complex real-world tasks.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* What is a Rubric? */}
               <div className="card card-elevated">
                 <div className="flex items-start gap-3 mb-4">
