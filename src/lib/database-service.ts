@@ -3,6 +3,7 @@ import logger from './logger'
 
 export interface DatabaseSubmission {
   id: string
+  userId: string
   email: string
   fullName: string
   prompt: string
@@ -182,6 +183,7 @@ class DatabaseService {
 
     return {
       id: submission.id,
+      userId: submission.userId,
       email: submission.user.email,
       fullName: submission.user.fullName,
       prompt: submission.prompt,
