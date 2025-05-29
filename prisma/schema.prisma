@@ -16,6 +16,7 @@ datasource db {
 model User {
   id           String       @id @default(uuid())
   email        String       @unique
+  fullName     String
   clerkId      String?      @unique
   submissions  Submission[]
   createdAt    DateTime     @default(now())
@@ -27,6 +28,8 @@ model Submission {
   prompt            String
   status            String            @default("in_progress") // in_progress, submitted
   submittedAt       DateTime?
+  gradingResult     Json?             // Store grading results as JSON
+  gradedAt          DateTime?         // When the submission was graded
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   

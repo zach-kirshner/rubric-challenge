@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import logger from '@/lib/logger'
-import submissionsStore from '@/lib/submissions-store'
+import databaseService from '@/lib/database-service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     if (submissionId) {
       // Get specific submission details
-      const submission = submissionsStore.getSubmission(submissionId)
+      const submission = await databaseService.getSubmission(submissionId)
       
       if (!submission) {
         return NextResponse.json(
@@ -68,7 +68,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Return all submissions with calculated scores
-    const summaries = submissionsStore.getAllSubmissions().map(submission => {
+    const allSubmissions = await databaseService.getAllSubmissions()
+    const summaries = allSubmissions.map(submission => {
       let rubricScore = submission.gradingResult?.score || 0
       let promptScore = submission.gradingResult?.promptGrade?.score || 0
       

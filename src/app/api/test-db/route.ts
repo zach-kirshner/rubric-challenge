@@ -1,38 +1,43 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import logger from '@/lib/logger'
 
 export async function GET() {
   try {
-    // Test database connection
-    await prisma.$connect()
+    // Test database connection and table structure
+    const userCount = await prisma.user.count()
+    const submissionCount = await prisma.submission.count()
     
-    // Try a simple query
-    const result = await prisma.$queryRaw`SELECT 1 as test`
+    // Test creating a sample user (we'll delete it right after)
+    const testEmail = `test-${Date.now()}@example.com`
+    const testUser = await prisma.user.create({
+      data: {
+        email: testEmail,
+        fullName: 'Test User'
+      }
+    })
     
-    // Check if we can access the schema
-    const tables = await prisma.$queryRaw`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `
+    // Clean up test user
+    await prisma.user.delete({
+      where: { id: testUser.id }
+    })
+    
+    logger.info({ userCount, submissionCount }, 'Database test successful')
     
     return NextResponse.json({
       status: 'success',
-      message: 'Database connection successful',
-      testQuery: result,
-      tables: tables,
-      timestamp: new Date().toISOString()
+      message: 'Database connection and schema working correctly',
+      counts: {
+        users: userCount,
+        submissions: submissionCount
+      },
+      testResult: 'Test user created and deleted successfully'
     })
   } catch (error) {
-    console.error('Database test error:', error)
-    
+    logger.error(error instanceof Error ? error.message : String(error), 'Database test failed')
     return NextResponse.json({
       status: 'error',
-      message: 'Database connection failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'Database test failed'
     }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
   }
 } 

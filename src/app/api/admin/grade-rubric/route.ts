@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import logger from '@/lib/logger'
-import { submissions } from '../../submissions/route'
+import databaseService from '@/lib/database-service'
 import Anthropic from '@anthropic-ai/sdk'
 import { RUBRIC_GRADER_SYSTEM_PROMPT } from '@/lib/rubric-grader-prompt'
 import { PROMPT_GRADER_SYSTEM_PROMPT } from '@/lib/prompt-grader-prompt'
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the submission
-    const submission = submissions.find(s => s.id === submissionId)
+    const submission = await databaseService.getSubmission(submissionId)
     
     if (!submission) {
       return NextResponse.json(

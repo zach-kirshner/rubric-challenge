@@ -110,14 +110,29 @@ export async function POST(request: NextRequest) {
 
     logger.info({ email: normalizedEmail, fullName, promptLength: prompt.length }, 'Generating rubric for user')
 
-    // Check if we're in local development mode (placeholder API key)
-    if (process.env.ANTHROPIC_API_KEY === 'local-development-placeholder') {
-      logger.info({ email: normalizedEmail }, 'Using mock rubric for local development')
+    // Check if API key is present and valid
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    const isValidApiKey = apiKey && apiKey.startsWith('sk-ant-') && apiKey.length > 20
+    
+    // Use mock rubric if no valid API key or in local development
+    if (!isValidApiKey || apiKey === 'local-development-placeholder') {
+      logger.info({ 
+        email: normalizedEmail, 
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey?.length || 0,
+        reason: !apiKey ? 'missing' : apiKey === 'local-development-placeholder' ? 'placeholder' : 'invalid'
+      }, 'Using mock rubric - Anthropic API key not configured')
+      
       const mockRubric = createMockRubric(prompt)
-      return NextResponse.json(mockRubric)
+      return NextResponse.json({
+        ...mockRubric,
+        _mock: true, // Flag to indicate this is mock data
+        _message: "Using mock rubric. To use AI-generated rubrics, configure your Anthropic API key."
+      })
     }
 
-    const systemPrompt = `You are an expert at creating evaluation rubrics for AI-generated content. Your task is to generate a comprehensive rubric with binary (yes/no) criteria that can be used to evaluate whether an AI successfully completes the given task.
+    try {
+      const systemPrompt = `You are an expert at creating evaluation rubrics for AI-generated content. Your task is to generate a comprehensive rubric with binary (yes/no) criteria that can be used to evaluate whether an AI successfully completes the given task.
 
 Generate between 20-40 specific, measurable criteria. Each criterion should be:
 1. Binary (can be answered with yes/no)
@@ -144,50 +159,67 @@ Return the rubric as a JSON array with this structure:
   ]
 }`
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4000,
-      temperature: 0.7,
-      system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: `Create a comprehensive evaluation rubric for the following task:\n\n${prompt}\n\nGenerate 20-40 specific binary criteria that can be used to evaluate if an AI successfully completes this task.`
-        }
-      ]
-    })
+      const message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4000,
+        temperature: 0.7,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: `Create a comprehensive evaluation rubric for the following task:\n\n${prompt}\n\nGenerate 20-40 specific binary criteria that can be used to evaluate if an AI successfully completes this task.`
+          }
+        ]
+      })
 
-    const content = message.content[0]
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude')
+      const content = message.content[0]
+      if (content.type !== 'text') {
+        throw new Error('Unexpected response type from Claude')
+      }
+
+      // Parse the response
+      const responseText = content.text
+      const jsonMatch = responseText.match(/\{[\s\S]*"rubricItems"[\s\S]*\}/)
+      
+      if (!jsonMatch) {
+        throw new Error('Could not parse rubric from response')
+      }
+
+      const rubricData = JSON.parse(jsonMatch[0])
+      
+      // Ensure each item has a unique ID
+      rubricData.rubricItems = rubricData.rubricItems.map((item: any, index: number) => ({
+        ...item,
+        id: item.id || `item-${Date.now()}-${index}`,
+        isPositive: item.isPositive !== false // Default to positive if not specified
+      }))
+
+      // Log the count
+      const itemCount = rubricData.rubricItems.length
+      if (itemCount < 20 || itemCount > 40) {
+        logger.warn({ count: itemCount }, 'Rubric items count out of range')
+      }
+
+      logger.info({ email: normalizedEmail, fullName, itemCount }, 'Rubric generated successfully for user')
+
+      return NextResponse.json(rubricData)
+    } catch (anthropicError: any) {
+      // Handle Anthropic API errors specifically
+      logger.error({ 
+        error: anthropicError?.message || 'Unknown Anthropic error',
+        status: anthropicError?.status,
+        type: anthropicError?.error?.type 
+      }, 'Anthropic API error')
+      
+      // Fall back to mock rubric on API error
+      logger.info({ email: normalizedEmail }, 'Falling back to mock rubric due to API error')
+      const mockRubric = createMockRubric(prompt)
+      return NextResponse.json({
+        ...mockRubric,
+        _mock: true,
+        _message: "Using mock rubric due to API error. This may be a temporary issue."
+      })
     }
-
-    // Parse the response
-    const responseText = content.text
-    const jsonMatch = responseText.match(/\{[\s\S]*"rubricItems"[\s\S]*\}/)
-    
-    if (!jsonMatch) {
-      throw new Error('Could not parse rubric from response')
-    }
-
-    const rubricData = JSON.parse(jsonMatch[0])
-    
-    // Ensure each item has a unique ID
-    rubricData.rubricItems = rubricData.rubricItems.map((item: any, index: number) => ({
-      ...item,
-      id: item.id || `item-${Date.now()}-${index}`,
-      isPositive: item.isPositive !== false // Default to positive if not specified
-    }))
-
-    // Log the count
-    const itemCount = rubricData.rubricItems.length
-    if (itemCount < 20 || itemCount > 40) {
-      logger.warn({ count: itemCount }, 'Rubric items count out of range')
-    }
-
-    logger.info({ email: normalizedEmail, fullName, itemCount }, 'Rubric generated successfully for user')
-
-    return NextResponse.json(rubricData)
   } catch (error) {
     logger.error(error instanceof Error ? error.message : String(error), 'Error generating rubric')
     return NextResponse.json(

@@ -10,6 +10,8 @@ export async function GET() {
         hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
         anthropicKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...',
         hasDatabaseUrl: !!process.env.DATABASE_URL,
+        databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 30) + '...',
+        databaseHost: process.env.DATABASE_URL?.match(/@([^:]+)/)?.[1] || 'not found',
         hasAdminEmails: !!process.env.ADMIN_EMAILS,
       }
     })

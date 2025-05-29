@@ -4,7 +4,7 @@ import { RubricItem, Action, Criterion, CriterionAction } from '@/types'
 import Anthropic from '@anthropic-ai/sdk'
 import { RUBRIC_GRADER_SYSTEM_PROMPT } from '@/lib/rubric-grader-prompt'
 import { PROMPT_GRADER_SYSTEM_PROMPT } from '@/lib/prompt-grader-prompt'
-import submissionsStore from '@/lib/submissions-store'
+import databaseService from '@/lib/database-service'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -446,7 +446,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Store submission using persistent storage
-    submissionsStore.addSubmission(submission)
+    await databaseService.addSubmission(submission)
     
     // Automatically grade the submission
     logger.info({ submissionId }, 'Auto-grading submission')
@@ -454,7 +454,7 @@ export async function POST(request: NextRequest) {
     
     // Update submission with grading result
     if (gradingResult) {
-      submissionsStore.updateSubmission(submissionId, {
+      await databaseService.updateSubmission(submissionId, {
         gradingResult,
         gradedAt: new Date()
       })
@@ -488,12 +488,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Export for use in admin API - now using the store
-export const submissions = submissionsStore.getAllSubmissions()
 
 export async function GET(request: NextRequest) {
   try {
     // Get all submissions from persistent storage
-    const allSubmissions = submissionsStore.getAllSubmissions()
+    const allSubmissions = await databaseService.getAllSubmissions()
     
     return NextResponse.json({
       submissions: allSubmissions.map(sub => ({
