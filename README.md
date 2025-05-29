@@ -179,3 +179,4 @@ The application is designed to be deployed on Vercel:
 ## License
 
 MIT
+# Force deployment to pick up new env vars - Thu May 29 14:04:36 EDT 2025
