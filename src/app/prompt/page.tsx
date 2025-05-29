@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Zap, ArrowRight, AlertCircle, Lock, Mail, User } from 'lucide-react'
+import { Zap, ArrowRight, AlertCircle, Lock, Mail, User, HelpCircle, ChevronDown, ChevronUp, BookOpen, Target, CheckCircle } from 'lucide-react'
 
 export default function PromptPage() {
   const router = useRouter()
@@ -15,6 +15,7 @@ export default function PromptPage() {
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
   const [adminError, setAdminError] = useState('')
+  const [showInstructions, setShowInstructions] = useState(false)
 
   // Check if user already has data in session
   useEffect(() => {
@@ -187,6 +188,193 @@ export default function PromptPage() {
           <p className="text-lg" style={{ color: 'var(--color-muted-foreground)' }}>
             Enter your information and task prompt to begin
           </p>
+        </div>
+
+        {/* Instructions Section */}
+        <div className="mb-8 animate-in" style={{ animationDelay: '0.025s' }}>
+          <button
+            type="button"
+            onClick={() => setShowInstructions(!showInstructions)}
+            className="w-full card card-elevated hover:shadow-lg transition-all duration-200 group"
+            style={{ 
+              background: showInstructions ? 'rgba(139, 92, 246, 0.05)' : 'var(--color-card-background)',
+              borderColor: showInstructions ? 'rgba(139, 92, 246, 0.2)' : 'var(--color-card-border)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+                  <HelpCircle className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                </div>
+                <span className="text-lg font-medium">How to Create a Great Challenge</span>
+              </div>
+              {showInstructions ? (
+                <ChevronUp className="w-5 h-5" style={{ color: 'var(--color-muted-foreground)' }} />
+              ) : (
+                <ChevronDown className="w-5 h-5" style={{ color: 'var(--color-muted-foreground)' }} />
+              )}
+            </div>
+          </button>
+
+          {showInstructions && (
+            <div className="mt-4 space-y-6 animate-slide-down">
+              {/* Overview */}
+              <div className="card card-elevated">
+                <div className="flex items-start gap-3 mb-4">
+                  <BookOpen className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Overview</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Create challenging tasks that test AI capabilities by defining clear evaluation criteria. 
+                      Your submission consists of two parts:
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                      <li className="flex items-start gap-2">
+                        <span className="text-xs mt-1">•</span>
+                        <span><strong>Task Prompt:</strong> An open-ended question or challenge for an AI to complete</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-xs mt-1">•</span>
+                        <span><strong>Rubric:</strong> A set of objective criteria to evaluate the quality of responses</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Creating a Task Prompt */}
+              <div className="card card-elevated">
+                <div className="flex items-start gap-3 mb-4">
+                  <Target className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Creating a Great Task Prompt</h3>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Your task should be challenging, realistic, and require reasoning beyond simple information lookup. 
+                      Think of tasks you might assign to a talented assistant.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Make it Reasoning-Heavy</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Don't just ask for facts. Request analysis, synthesis, comparison, or creative problem-solving.
+                        </p>
+                        <div className="mt-2 p-3 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
+                          <p className="text-xs font-medium mb-1" style={{ color: 'var(--gradient-mid)' }}>Good Example:</p>
+                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            "Compare three different approaches to renewable energy storage, analyzing their cost-effectiveness, 
+                            environmental impact, and scalability for residential use."
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Be Specific & Clear</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Provide enough context for the task to be understood without ambiguity. Include any constraints 
+                          or specific requirements.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Keep it Open-Ended</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Allow for multiple valid approaches while maintaining objective evaluation criteria. 
+                          The best tasks have many possible good answers.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Make it Realistic</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Create tasks that reflect real-world needs - something you or others might actually need help with.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Understanding Rubrics */}
+              <div className="card card-elevated">
+                <div className="flex items-start gap-3 mb-4">
+                  <CheckCircle className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Understanding Rubrics</h3>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                      After you submit your prompt, our AI will generate a rubric - a set of criteria to evaluate responses. 
+                      Each criterion is a statement that can be marked as true or false.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>What Makes a Good Rubric?</h4>
+                        <ul className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          <li className="flex items-start gap-2">
+                            <span className="text-xs mt-1">•</span>
+                            <span><strong>Comprehensive:</strong> Covers all important aspects of a good response</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-xs mt-1">•</span>
+                            <span><strong>Objective:</strong> Each criterion can be clearly evaluated as true or false</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-xs mt-1">•</span>
+                            <span><strong>Diverse:</strong> Includes different types of requirements (accuracy, reasoning, structure, etc.)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-xs mt-1">•</span>
+                            <span><strong>Balanced:</strong> Not overly restrictive - allows for creative, valid responses</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="p-3 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
+                        <p className="text-xs font-medium mb-2" style={{ color: 'var(--gradient-mid)' }}>Example Rubric Criteria:</p>
+                        <ul className="space-y-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                          <li>✓ The response identifies at least three renewable energy storage methods</li>
+                          <li>✓ Cost comparisons include specific price ranges or data</li>
+                          <li>✓ Environmental impact is discussed with concrete examples</li>
+                          <li>✓ Scalability challenges are addressed for each method</li>
+                          <li>✓ The response includes a clear recommendation with justification</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Process Steps */}
+              <div className="card card-elevated">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+                    <Zap className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Next Steps</h3>
+                    <ol className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium">1.</span>
+                        <span>Enter your information and task prompt below</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium">2.</span>
+                        <span>Our AI will analyze your prompt and generate evaluation criteria</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium">3.</span>
+                        <span>Review and refine the generated rubric on the next page</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="font-medium">4.</span>
+                        <span>Submit your challenge for evaluation</span>
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Form */}
