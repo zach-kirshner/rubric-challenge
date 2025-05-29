@@ -40,17 +40,17 @@ const createMockRubric = (prompt: string) => {
       },
       {
         "id": "mock-6",
-        "criterion": "The response contains factual errors or inaccurate information",
-        "isPositive": false
+        "criterion": "The response avoids factual errors and provides accurate information",
+        "isPositive": true
       },
       {
         "id": "mock-7",
-        "criterion": "The response lacks specific details and remains too vague or generic",
-        "isPositive": false
+        "criterion": "The response avoids being too vague and provides sufficient detail",
+        "isPositive": true
       },
       {
         "id": "mock-8",
-        "criterion": "The response fails to address one or more key aspects explicitly mentioned in the prompt",
+        "criterion": "The response contains factual errors or inaccurate information",
         "isPositive": false
       },
       {
@@ -60,8 +60,8 @@ const createMockRubric = (prompt: string) => {
       },
       {
         "id": "mock-10",
-        "criterion": "The response clearly demonstrates understanding of the task's core objectives",
-        "isPositive": true
+        "criterion": "The response fails to address one or more key aspects explicitly mentioned in the prompt",
+        "isPositive": false
       }
     ]
   }
@@ -181,10 +181,31 @@ CRITICAL PRINCIPLES:
    - ❌ "Is the calculation correct?"
    - ✅ "The response calculates the total as exactly $156.78"
 
+8. POSITIVE vs NEGATIVE CRITERIA LOGIC:
+   - POSITIVE CRITERIA (isPositive: true): Things that should be present or done correctly
+     * "The response correctly identifies the main character"
+     * "The response provides three specific examples"
+     * "The response avoids factual errors" (avoiding errors is good!)
+   - NEGATIVE CRITERIA (isPositive: false): Things that should NOT be present (errors/problems)
+     * "The response contains factual errors"
+     * "The response includes irrelevant information"
+     * "The response misattributes actions to the wrong character"
+   
+   SCORING LOGIC:
+   - For POSITIVE criteria: TRUE = award points, FALSE = no points
+   - For NEGATIVE criteria: TRUE = deduct points, FALSE = no deduction
+   
+   PHRASING GUIDELINES:
+   - If you want to check that something is avoided correctly, phrase it positively:
+     ❌ "The response avoids errors" (isPositive: false) ← WRONG
+     ✅ "The response avoids errors" (isPositive: true) ← CORRECT
+   - If you want to check for the presence of an error, phrase it negatively:
+     ✅ "The response contains errors" (isPositive: false) ← CORRECT
+
 TARGET METRICS:
 - Generate 10-30 criteria (as many as needed for comprehensive coverage)
 - Aim for criteria where a typical model might fail ~50% of them
-- Include both positive criteria (what should be present) and negative criteria (what to avoid)
+- Include both positive criteria (what should be present/done correctly) and negative criteria (errors to avoid)
 
 CATEGORIZE each criterion by:
 - Type: objective (measurable fact) vs subjective (requires judgment)
@@ -198,11 +219,21 @@ For tasks involving specific data, create criteria that check for:
 - Common errors or misconceptions to avoid
 
 EXAMPLES OF WELL-FORMATTED CRITERIA:
+
+POSITIVE CRITERIA (award points when TRUE):
 - "The response states that the Swatch Group's net sales figure for FY 2019 is CHF 8243 million"
 - "The model recommends Chamaedorea Elegans (Parlor Palm) as a suitable plant for the friend"
 - "The response mentions Zefyras boutique as one that fits all the criteria mentioned in the task"
 - "The response explains that the total THC in a gummy cannot exceed 10% of the total cannabinoids"
-- "When describing Zefyras' sustainability practices, the response conveys that some designs are made with upcycled denim"
+- "The response avoids attributing actions to characters that were performed by others"
+- "The response maintains a professional tone throughout"
+
+NEGATIVE CRITERIA (deduct points when TRUE):
+- "The response contains factual errors about the Swatch Group's financial data"
+- "The response includes plant recommendations that are toxic to cats"
+- "The response misattributes actions to Prospero that were performed by other characters"
+- "The response provides incorrect information about THC regulations"
+- "The response includes irrelevant information not related to the task"
 
 Return the rubric as JSON:
 {
