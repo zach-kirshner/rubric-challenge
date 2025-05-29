@@ -218,26 +218,56 @@ export default function PromptPage() {
 
           {showInstructions && (
             <div className="mt-4 space-y-6 animate-slide-down">
-              {/* Overview */}
+              {/* What is a Rubric? */}
               <div className="card card-elevated">
                 <div className="flex items-start gap-3 mb-4">
                   <BookOpen className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">Overview</h3>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
-                      Create challenging tasks that test AI capabilities by defining clear evaluation criteria. 
-                      Your submission consists of two parts:
+                  <div className="w-full">
+                    <h3 className="font-semibold text-lg mb-2">What is a Rubric?</h3>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
+                      A rubric is a structured evaluation tool that breaks down what makes a good response into specific, 
+                      measurable criteria. Each criterion is a clear statement that can be evaluated as true or false.
                     </p>
-                    <ul className="mt-3 space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                      <li className="flex items-start gap-2">
-                        <span className="text-xs mt-1">•</span>
-                        <span><strong>Task Prompt:</strong> An open-ended question or challenge for an AI to complete</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-xs mt-1">•</span>
-                        <span><strong>Rubric:</strong> A set of objective criteria to evaluate the quality of responses</span>
-                      </li>
-                    </ul>
+                    
+                    {/* Example */}
+                    <div className="p-4 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
+                      <p className="text-xs font-medium mb-3" style={{ color: 'var(--gradient-mid)' }}>Example:</p>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-medium mb-1">Task Prompt:</p>
+                          <p className="text-xs italic" style={{ color: 'var(--color-muted-foreground)' }}>
+                            "What are effective strategies for reducing plastic waste in daily life?"
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs font-medium mb-2">Rubric Criteria:</p>
+                          <ul className="space-y-1.5 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response mentions reusable shopping bags as an alternative to plastic bags</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response includes specific examples of reusable containers</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response explains the environmental impact of plastic waste</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response provides at least 3 distinct strategies</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs mt-3" style={{ color: 'var(--color-muted-foreground)' }}>
+                        Together, these criteria paint a picture of what makes a comprehensive response to the prompt.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -249,45 +279,47 @@ export default function PromptPage() {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Creating a Great Task Prompt</h3>
                     <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
-                      Your task should be challenging, realistic, and require reasoning beyond simple information lookup. 
-                      Think of tasks you might assign to a talented assistant.
+                      Your task prompt is the foundation. It should be challenging enough that AI models need to demonstrate
+                      real understanding and reasoning to succeed.
                     </p>
                     
                     <div className="space-y-4">
                       <div>
-                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Make it Reasoning-Heavy</h4>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Make it Open-Ended</h4>
                         <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                          Don't just ask for facts. Request analysis, synthesis, comparison, or creative problem-solving.
+                          Allow for multiple valid approaches and responses. The best tasks have many possible good answers
+                          that can still be evaluated objectively.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Require Analysis & Synthesis</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Don't just ask for information retrieval. Request comparison, evaluation, problem-solving, 
+                          or creative application of concepts.
                         </p>
                         <div className="mt-2 p-3 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
                           <p className="text-xs font-medium mb-1" style={{ color: 'var(--gradient-mid)' }}>Good Example:</p>
                           <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            "Compare three different approaches to renewable energy storage, analyzing their cost-effectiveness, 
-                            environmental impact, and scalability for residential use."
+                            "Design a sustainable urban transportation system for a mid-sized city, considering environmental 
+                            impact, cost-effectiveness, and accessibility for all residents."
                           </p>
                         </div>
                       </div>
 
                       <div>
-                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Be Specific & Clear</h4>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Be Specific About Requirements</h4>
                         <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                          Provide enough context for the task to be understood without ambiguity. Include any constraints 
-                          or specific requirements.
+                          Include any constraints, format requirements, or specific aspects that must be addressed. 
+                          This helps generate more precise evaluation criteria.
                         </p>
                       </div>
 
                       <div>
-                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Keep it Open-Ended</h4>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Target Appropriate Difficulty</h4>
                         <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                          Allow for multiple valid approaches while maintaining objective evaluation criteria. 
-                          The best tasks have many possible good answers.
-                        </p>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Make it Realistic</h4>
-                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                          Create tasks that reflect real-world needs - something you or others might actually need help with.
+                          Aim for tasks where current AI models might achieve about 50% of the criteria. Too easy or 
+                          too hard won't effectively differentiate performance.
                         </p>
                       </div>
                     </div>
@@ -295,48 +327,64 @@ export default function PromptPage() {
                 </div>
               </div>
 
-              {/* Understanding Rubrics */}
+              {/* What Makes a Good Rubric */}
               <div className="card card-elevated">
                 <div className="flex items-start gap-3 mb-4">
                   <CheckCircle className="w-5 h-5 mt-0.5" style={{ color: 'var(--gradient-mid)' }} />
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">Understanding Rubrics</h3>
+                    <h3 className="font-semibold text-lg mb-2">What Makes a Good Rubric?</h3>
                     <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
-                      After you submit your prompt, our AI will generate a rubric - a set of criteria to evaluate responses. 
-                      Each criterion is a statement that can be marked as true or false.
+                      Our AI will generate evaluation criteria based on your prompt. Understanding what makes 
+                      good criteria helps you review and refine them effectively.
                     </p>
                     
                     <div className="space-y-4">
                       <div>
-                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>What Makes a Good Rubric?</h4>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Key Principles</h4>
                         <ul className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                           <li className="flex items-start gap-2">
                             <span className="text-xs mt-1">•</span>
-                            <span><strong>Comprehensive:</strong> Covers all important aspects of a good response</span>
+                            <div>
+                              <span className="font-medium">Atomic:</span> Each criterion evaluates exactly one distinct aspect
+                              <div className="mt-1 text-xs opacity-80">
+                                ❌ "Mentions the capital is Ottawa and has 10 provinces"<br/>
+                                ✅ "Mentions the capital of Canada is Ottawa"<br/>
+                                ✅ "States that Canada has 10 provinces"
+                              </div>
+                            </div>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-xs mt-1">•</span>
-                            <span><strong>Objective:</strong> Each criterion can be clearly evaluated as true or false</span>
+                            <div>
+                              <span className="font-medium">Specific:</span> Clear, binary (true/false) statements that are objective
+                              <div className="mt-1 text-xs opacity-80">
+                                ❌ "The response is well-written"<br/>
+                                ✅ "The response includes at least 3 specific examples"
+                              </div>
+                            </div>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-xs mt-1">•</span>
-                            <span><strong>Diverse:</strong> Includes different types of requirements (accuracy, reasoning, structure, etc.)</span>
+                            <div>
+                              <span className="font-medium">Self-contained:</span> Contains all information needed to evaluate
+                              <div className="mt-1 text-xs opacity-80">
+                                ❌ "Mentions the largest planet"<br/>
+                                ✅ "Identifies Jupiter as the largest planet in our solar system"
+                              </div>
+                            </div>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-xs mt-1">•</span>
-                            <span><strong>Balanced:</strong> Not overly restrictive - allows for creative, valid responses</span>
+                            <div>
+                              <span className="font-medium">Comprehensive:</span> Together, criteria cover all important aspects of a good response
+                            </div>
                           </li>
-                        </ul>
-                      </div>
-
-                      <div className="p-3 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
-                        <p className="text-xs font-medium mb-2" style={{ color: 'var(--gradient-mid)' }}>Example Rubric Criteria:</p>
-                        <ul className="space-y-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                          <li>✓ The response identifies at least three renewable energy storage methods</li>
-                          <li>✓ Cost comparisons include specific price ranges or data</li>
-                          <li>✓ Environmental impact is discussed with concrete examples</li>
-                          <li>✓ Scalability challenges are addressed for each method</li>
-                          <li>✓ The response includes a clear recommendation with justification</li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-xs mt-1">•</span>
+                            <div>
+                              <span className="font-medium">Diverse:</span> Include different types of requirements (facts, reasoning, structure, examples)
+                            </div>
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -351,23 +399,23 @@ export default function PromptPage() {
                     <Zap className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">Next Steps</h3>
+                    <h3 className="font-semibold text-lg mb-2">Your Workflow</h3>
                     <ol className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                       <li className="flex items-start gap-2">
                         <span className="font-medium">1.</span>
-                        <span>Enter your information and task prompt below</span>
+                        <span>Enter your information and craft a challenging task prompt</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="font-medium">2.</span>
-                        <span>Our AI will analyze your prompt and generate evaluation criteria</span>
+                        <span>Our AI analyzes your prompt and generates evaluation criteria</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="font-medium">3.</span>
-                        <span>Review and refine the generated rubric on the next page</span>
+                        <span>Review the generated rubric - add, edit, or remove criteria as needed</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="font-medium">4.</span>
-                        <span>Submit your challenge for evaluation</span>
+                        <span>Submit your finalized challenge for the competition</span>
                       </li>
                     </ol>
                   </div>
