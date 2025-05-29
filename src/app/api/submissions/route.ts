@@ -407,10 +407,18 @@ export async function POST(request: NextRequest) {
     
     // Process actions into CriterionAction records
     actions.forEach((action: Action, index: number) => {
+      // Map the frontend itemId to the actual database criterion ID
+      let actualCriterionId: string | undefined = undefined
+      if (action.itemId) {
+        // Find the criterion with matching originalId
+        const matchingCriterion = criteria.find(c => c.originalId === action.itemId)
+        actualCriterionId = matchingCriterion?.id
+      }
+
       const criterionAction: CriterionAction = {
         id: `action_${Date.now()}_${index}`,
         submissionId,
-        criterionId: action.itemId,
+        criterionId: actualCriterionId,
         actionType: action.type,
         previousText: action.originalText,
         newText: action.newText,
