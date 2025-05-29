@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  clerkId      String?      @unique
+  submissions  Submission[]
+  createdAt    DateTime     @default(now())
+}
+
+model Submission {
+  id                String            @id @default(uuid())
+  userId            String
+  prompt            String
+  status            String            @default("in_progress") // in_progress, submitted
+  submittedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  user              User              @relation(fields: [userId], references: [id])
+  criteria          Criterion[]
+  criteriaActions   CriterionAction[]
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model Criterion {
+  id                String            @id @default(uuid())
+  submissionId      String
+  originalId        String            // ID from the AI-generated rubric
+  text              String
+  isPositive        Boolean           @default(true)
+  source            String            // "ai_generated" or "user_added"
+  status            String            @default("active") // active, edited, deleted
+  finalText         String?           // Final text after editing
+  order             Int               // Display order
+  createdAt         DateTime          @default(now())
+  
+  submission        Submission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actions           CriterionAction[]
+  
+  @@index([submissionId])
+  @@index([status])
+}
+
+model CriterionAction {
+  id                String      @id @default(uuid())
+  submissionId      String
+  criterionId       String?     // Null for new additions
+  actionType        String      // "add", "edit", "delete", "reorder"
+  previousText      String?
+  newText           String?
+  previousOrder     Int?
+  newOrder          Int?
+  justification     String
+  timestamp         DateTime    @default(now())
+  
+  submission        Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  criterion         Criterion?  @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  
+  @@index([submissionId])
+  @@index([criterionId])
+  @@index([actionType])
+}
