@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Sparkles, Lightbulb } from 'lucide-react'
+import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Sparkles, Lightbulb, Info } from 'lucide-react'
 import logger from '@/lib/logger'
 
 interface Submission {
@@ -128,6 +128,146 @@ interface Improvements {
   }
 }
 
+// Add a new Tooltip component
+const ImprovementTooltip = ({ 
+  children, 
+  improvement 
+}: { 
+  children: React.ReactNode
+  improvement?: any 
+}) => {
+  const [isVisible, setIsVisible] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const tooltipWidth = 400 // approximate width
+    
+    // Position tooltip to avoid going off-screen
+    let x = rect.left + rect.width / 2
+    if (x + tooltipWidth / 2 > viewportWidth) {
+      x = viewportWidth - tooltipWidth / 2 - 20
+    } else if (x - tooltipWidth / 2 < 0) {
+      x = tooltipWidth / 2 + 20
+    }
+    
+    setPosition({
+      x,
+      y: rect.top - 10
+    })
+    
+    // Add delay before showing
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(true)
+    }, 500)
+  }
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setIsVisible(false)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
+
+  return (
+    <div 
+      className="relative inline"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {improvement && isVisible && (
+        <div 
+          className={`fixed z-50 p-4 rounded-lg shadow-xl max-w-md transition-opacity duration-200 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ 
+            left: position.x,
+            top: position.y,
+            transform: 'translate(-50%, -100%)',
+            backgroundColor: 'var(--color-background)',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
+            <span className="text-sm font-semibold">AI-Suggested Improvement</span>
+          </div>
+          
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                Improved version:
+              </p>
+              <p className="text-sm font-medium">
+                {improvement.improved || improvement.improvedPrompt}
+              </p>
+            </div>
+            
+            {improvement.violations && improvement.violations.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                  Issues fixed:
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {improvement.violations.map((violation: string, idx: number) => (
+                    <span 
+                      key={idx} 
+                      className="px-2 py-0.5 rounded text-xs"
+                      style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
+                    >
+                      {violation}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {improvement.changes && improvement.changes.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                  Improvements:
+                </p>
+                <ul className="space-y-1">
+                  {improvement.changes.slice(0, 3).map((change: any, idx: number) => (
+                    <li key={idx} className="text-xs flex items-start gap-1">
+                      <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-green-600" />
+                      <span>{change.fix || change.bestPractice}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {improvement.estimatedScore && (
+              <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <p className="text-xs">
+                  <span style={{ color: 'var(--color-muted-foreground)' }}>Score improvement: </span>
+                  <span className="font-medium" style={{ color: '#EF4444' }}>
+                    {improvement.estimatedScore.before}
+                  </span>
+                  <span style={{ color: 'var(--color-muted-foreground)' }}> → </span>
+                  <span className="font-medium" style={{ color: '#22C55E' }}>
+                    {improvement.estimatedScore.after}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -208,12 +348,19 @@ export default function AdminPage() {
   const fetchImprovements = async (submissionId: string) => {
     setIsLoadingImprovements(true)
     try {
+      console.log('Fetching improvements for submission:', submissionId)
       const response = await fetch(`/api/admin/improvements?id=${submissionId}`)
-      if (!response.ok) throw new Error('Failed to fetch improvements')
+      
+      if (!response.ok) {
+        console.error('Failed to fetch improvements:', response.status)
+        throw new Error('Failed to fetch improvements')
+      }
       
       const data = await response.json()
+      console.log('Improvements data received:', data)
       setImprovements(data)
     } catch (error) {
+      console.error('Error fetching improvements:', error)
       logger.error(error instanceof Error ? error.message : String(error), 'Error fetching improvements')
     } finally {
       setIsLoadingImprovements(false)
@@ -391,10 +538,25 @@ export default function AdminPage() {
         <main className="max-w-7xl mx-auto px-6 py-8">
           {/* Submission Info */}
           <div className="card mb-6">
-            <h2 className="text-lg font-semibold mb-2">Prompt</h2>
-            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-              {selectedSubmission.submission.prompt}
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold">Prompt</h2>
+              {isLoadingImprovements ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                  <span style={{ color: 'var(--color-muted-foreground)' }}>Loading improvements...</span>
+                </div>
+              ) : improvements?.promptImprovement && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
+                  <span style={{ color: 'var(--color-muted-foreground)' }}>Hover to see improved version</span>
+                </div>
+              )}
+            </div>
+            <ImprovementTooltip improvement={improvements?.promptImprovement}>
+              <p className="text-sm cursor-help" style={{ color: 'var(--color-muted-foreground)' }}>
+                {selectedSubmission.submission.prompt}
+              </p>
+            </ImprovementTooltip>
             <div className="flex gap-6 mt-4 text-sm">
               <div>
                 <span style={{ color: 'var(--color-muted-foreground)' }}>User: </span>
@@ -828,274 +990,63 @@ export default function AdminPage() {
 
           {/* Final Criteria */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Final Criteria ({selectedSubmission.criteria.final.length})</h3>
-            <div className="space-y-3">
-              {selectedSubmission.criteria.final.map((criterion, index) => (
-                <div key={criterion.id} className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-1">
-                    <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                      style={{ 
-                        background: criterion.isPositive 
-                          ? 'linear-gradient(135deg, #10B981, #34D399)' 
-                          : 'linear-gradient(135deg, #EF4444, #F87171)',
-                        color: 'white'
-                      }}
-                    >
-                      {criterion.isPositive ? '+' : '-'}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      {criterion.finalText || criterion.text}
-                    </p>
-                    <div className="flex gap-4 mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                      {criterion.source === 'user_added' && (
-                        <span className="text-green-600">User Added</span>
-                      )}
-                      {criterion.status === 'edited' && (
-                        <span className="text-blue-600">Edited</span>
-                      )}
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Final Criteria ({selectedSubmission.criteria.final.length})</h3>
+              {improvements?.criteriaImprovements && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
+                  <span style={{ color: 'var(--color-muted-foreground)' }}>Hover over criteria to see improvements</span>
                 </div>
-              ))}
+              )}
+            </div>
+            <div className="space-y-3">
+              {selectedSubmission.criteria.final.map((criterion, index) => {
+                // Find improvement for this criterion
+                const improvement = improvements?.criteriaImprovements?.improvements.find(
+                  imp => imp.originalId === criterion.id || imp.original === criterion.text
+                )
+                
+                return (
+                  <div key={criterion.id} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <div 
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                        style={{ 
+                          background: criterion.isPositive 
+                            ? 'linear-gradient(135deg, #10B981, #34D399)' 
+                            : 'linear-gradient(135deg, #EF4444, #F87171)',
+                          color: 'white'
+                        }}
+                      >
+                        {criterion.isPositive ? '+' : '-'}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <ImprovementTooltip improvement={improvement}>
+                        <p className={`text-sm ${improvement ? 'cursor-help' : ''}`}>
+                          {criterion.finalText || criterion.text}
+                        </p>
+                      </ImprovementTooltip>
+                      <div className="flex gap-4 mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                        {criterion.source === 'user_added' && (
+                          <span className="text-green-600">User Added</span>
+                        )}
+                        {criterion.status === 'edited' && (
+                          <span className="text-blue-600">Edited</span>
+                        )}
+                        {improvement && (
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" style={{ color: 'var(--gradient-mid)' }} />
+                            Improvement available
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
-
-          {/* AI-Suggested Improvements Section */}
-          {isLoadingImprovements ? (
-            <div className="card mt-6">
-              <div className="flex items-center gap-3">
-                <div className="spinner" />
-                <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                  Generating improvement suggestions based on grading criteria...
-                </p>
-              </div>
-            </div>
-          ) : improvements && (
-            <div className="space-y-6 mt-6">
-              {/* Improved Prompt Section */}
-              {improvements.promptImprovement && (
-                <div className="card card-elevated">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
-                    <h3 className="text-lg font-semibold">Golden Prompt Example</h3>
-                  </div>
-                  
-                  {/* Score Comparison */}
-                  {improvements.promptImprovement.estimatedScore && (
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="card" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-sm font-medium mb-2">Original Score Estimate</p>
-                        <div className="text-2xl font-bold" style={{ color: getScoreColor(parseInt(improvements.promptImprovement.estimatedScore.before)) }}>
-                          {improvements.promptImprovement.estimatedScore.before}/100
-                        </div>
-                      </div>
-                      <div className="card" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-sm font-medium mb-2">Improved Score Estimate</p>
-                        <div className="text-2xl font-bold" style={{ color: getScoreColor(parseInt(improvements.promptImprovement.estimatedScore.after)) }}>
-                          {improvements.promptImprovement.estimatedScore.after}/100
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Improved Prompt */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-semibold mb-2">Improved Prompt:</h4>
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-muted)' }}>
-                      <p className="text-sm">{improvements.promptImprovement.improvedPrompt}</p>
-                    </div>
-                  </div>
-
-                  {/* Improvements by Criteria */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold mb-3">Improvements by Grading Criteria:</h4>
-                    <div className="space-y-3">
-                      {improvements.promptImprovement.improvements.map((imp, idx) => (
-                        <div key={idx} className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium capitalize">
-                              {imp.criterion.replace(/_/g, ' ').toLowerCase()}
-                            </span>
-                            {imp.pointsGained && (
-                              <span className="text-xs font-medium text-green-600">
-                                +{imp.pointsGained} points
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs font-medium mb-1">{imp.change}</p>
-                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            {imp.reason}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Penalties Addressed */}
-                  {improvements.promptImprovement.penaltiesAddressed && improvements.promptImprovement.penaltiesAddressed.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">Penalties Avoided:</h4>
-                      <div className="space-y-2">
-                        {improvements.promptImprovement.penaltiesAddressed.map((penalty, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-xs font-medium">{penalty.penalty}</p>
-                              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                                {penalty.solution}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Improved Criteria Section */}
-              {improvements.criteriaImprovements && (
-                <div className="card card-elevated">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Lightbulb className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
-                    <h3 className="text-lg font-semibold">Golden Criteria Examples</h3>
-                  </div>
-
-                  {/* Best Practices Summary */}
-                  {improvements.criteriaImprovements.bestPracticesSummary && (
-                    <div className="grid grid-cols-4 gap-3 mb-6">
-                      <div className="card text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-xs font-medium mb-1">Atomicity</p>
-                        <p className="text-lg font-bold">{improvements.criteriaImprovements.bestPracticesSummary.atomicityScore}</p>
-                      </div>
-                      <div className="card text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-xs font-medium mb-1">Self-Contained</p>
-                        <p className="text-lg font-bold">{improvements.criteriaImprovements.bestPracticesSummary.selfContainedScore}</p>
-                      </div>
-                      <div className="card text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-xs font-medium mb-1">Diversity</p>
-                        <p className="text-lg font-bold">{improvements.criteriaImprovements.bestPracticesSummary.diversityScore}</p>
-                      </div>
-                      <div className="card text-center" style={{ backgroundColor: 'var(--color-muted)' }}>
-                        <p className="text-xs font-medium mb-1">Quality Gain</p>
-                        <p className="text-lg font-bold text-green-600">{improvements.criteriaImprovements.bestPracticesSummary.estimatedQualityImprovement}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Improved Criteria */}
-                  <div className="space-y-4 mb-6">
-                    {improvements.criteriaImprovements.improvements.map((imp, idx) => (
-                      <div key={idx} className="border rounded-lg p-4" style={{ borderColor: 'var(--color-border)' }}>
-                        {/* Original vs Improved */}
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>Original:</p>
-                            <p className="text-sm line-through opacity-75">{imp.original}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium mb-1 text-green-600">Improved:</p>
-                            <p className="text-sm font-medium">{imp.improved}</p>
-                          </div>
-                        </div>
-
-                        {/* Violations Fixed */}
-                        {imp.violations && imp.violations.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-xs font-medium mb-2">Violations Fixed:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {imp.violations.map((violation, vIdx) => (
-                                <span key={vIdx} className="px-2 py-1 rounded text-xs" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}>
-                                  {violation}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Changes Made */}
-                        <div className="space-y-2">
-                          {imp.changes.map((change, cIdx) => (
-                            <div key={cIdx} className="text-xs">
-                              <span className="font-medium">{change.issue}:</span>{' '}
-                              <span style={{ color: 'var(--color-muted-foreground)' }}>{change.fix}</span>
-                              <span className="ml-2 text-green-600">({change.bestPractice})</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Self-Contained Elements */}
-                        {imp.selfContainedElements && imp.selfContainedElements.length > 0 && (
-                          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-                            <p className="text-xs font-medium mb-1">Self-Contained Elements:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {imp.selfContainedElements.map((elem, eIdx) => (
-                                <span key={eIdx} className="px-2 py-1 rounded text-xs" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22C55E' }}>
-                                  {elem}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* MECE Analysis */}
-                  {improvements.criteriaImprovements.meceAnalysis && (
-                    <div className="border-t pt-4" style={{ borderColor: 'var(--color-border)' }}>
-                      <h4 className="text-sm font-semibold mb-3">MECE Analysis & Recommendations</h4>
-                      
-                      {improvements.criteriaImprovements.meceAnalysis.overlaps.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-xs font-medium mb-2">Overlapping Criteria to Separate:</p>
-                          <ul className="space-y-1">
-                            {improvements.criteriaImprovements.meceAnalysis.overlaps.map((overlap, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <XCircle className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
-                                <span className="text-xs">{overlap}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {improvements.criteriaImprovements.meceAnalysis.gaps.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-xs font-medium mb-2">Coverage Gaps Identified:</p>
-                          <ul className="space-y-1">
-                            {improvements.criteriaImprovements.meceAnalysis.gaps.map((gap, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-orange-600">!</span>
-                                <span className="text-xs">{gap}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {improvements.criteriaImprovements.meceAnalysis.recommendations && improvements.criteriaImprovements.meceAnalysis.recommendations.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium mb-2">Recommended New Criteria:</p>
-                          <ul className="space-y-1">
-                            {improvements.criteriaImprovements.meceAnalysis.recommendations.map((rec, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <Plus className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: '#22C55E' }} />
-                                <span className="text-xs">{rec}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </main>
       </div>
     )
