@@ -77,6 +77,11 @@ interface DashboardData {
 
 interface Improvements {
   promptImprovement: {
+    domainAnalysis: {
+      topic: string
+      taskType: string
+      currentFocus: string
+    }
     improvedPrompt: string
     improvements: Array<{
       criterion: string
@@ -84,9 +89,10 @@ interface Improvements {
       reason: string
       pointsGained?: string
     }>
-    penaltiesAddressed?: Array<{
-      penalty: string
-      solution: string
+    contextualEnhancements: Array<{
+      aspect: string
+      enhancement: string
+      example: string
     }>
     estimatedScore?: {
       before: string
@@ -102,28 +108,34 @@ interface Improvements {
     }
   }
   criteriaImprovements: {
+    taskContext: {
+      domain: string
+      keyObjectives: string[]
+      specificSkillsAssessed: string[]
+    }
     improvements: Array<{
       originalId: string
       original: string
-      violations?: string[]
+      contextualIssues: string[]
       improved: string
-      changes: Array<{
-        issue: string
-        fix: string
-        bestPractice: string
+      specificEnhancements: Array<{
+        aspect: string
+        domainRelevance: string
+        concreteExample: string
       }>
-      selfContainedElements?: string[]
     }>
-    meceAnalysis: {
-      overlaps: string[]
-      gaps: string[]
-      recommendations?: string[]
+    domainSpecificRecommendations: {
+      missingCriteria: string[]
+      topicSpecificGaps: string[]
+      suggestedAdditions: Array<{
+        criterion: string
+        rationale: string
+      }>
     }
-    bestPracticesSummary?: {
-      atomicityScore: string
-      selfContainedScore: string
-      diversityScore: string
-      estimatedQualityImprovement: string
+    contextualAlignment: {
+      promptCriteriaAlignment: string
+      domainCoverage: string
+      improvementImpact: string
     }
   }
 }
@@ -143,7 +155,7 @@ const ImprovementTooltip = ({
   const handleMouseEnter = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const viewportWidth = window.innerWidth
-    const tooltipWidth = 400 // approximate width
+    const tooltipWidth = 500 // increased for more content
     
     // Position tooltip to avoid going off-screen
     let x = rect.left + rect.width / 2
@@ -176,6 +188,9 @@ const ImprovementTooltip = ({
     }
   }, [])
 
+  const isPromptImprovement = improvement?.improvedPrompt !== undefined
+  const isCriteriaImprovement = improvement?.improved !== undefined
+
   return (
     <div 
       className="relative inline"
@@ -185,7 +200,7 @@ const ImprovementTooltip = ({
       {children}
       {improvement && isVisible && (
         <div 
-          className={`fixed z-50 p-4 rounded-lg shadow-xl max-w-md transition-opacity duration-200 ${
+          className={`fixed z-50 p-4 rounded-lg shadow-xl max-w-2xl transition-opacity duration-200 ${
             isVisible ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ 
@@ -202,51 +217,152 @@ const ImprovementTooltip = ({
             <span className="text-sm font-semibold">AI-Suggested Improvement</span>
           </div>
           
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                Improved version:
-              </p>
-              <p className="text-sm font-medium">
-                {improvement.improved || improvement.improvedPrompt}
-              </p>
-            </div>
-            
-            {improvement.violations && improvement.violations.length > 0 && (
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                  Issues fixed:
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {improvement.violations.map((violation: string, idx: number) => (
-                    <span 
-                      key={idx} 
-                      className="px-2 py-0.5 rounded text-xs"
-                      style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
-                    >
-                      {violation}
-                    </span>
-                  ))}
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+            {/* Prompt Improvement Display */}
+            {isPromptImprovement && (
+              <>
+                {/* Domain Analysis */}
+                {improvement.domainAnalysis && (
+                  <div className="space-y-1 pb-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                    <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Domain Analysis:
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Topic: </span>
+                        <span className="font-medium">{improvement.domainAnalysis.topic}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Type: </span>
+                        <span className="font-medium">{improvement.domainAnalysis.taskType}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Focus: </span>
+                        <span className="font-medium">{improvement.domainAnalysis.currentFocus}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Improved Prompt */}
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                    Improved version:
+                  </p>
+                  <p className="text-sm font-medium leading-relaxed">
+                    {improvement.improvedPrompt}
+                  </p>
                 </div>
-              </div>
+
+                {/* Contextual Enhancements */}
+                {improvement.contextualEnhancements && improvement.contextualEnhancements.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Specific Enhancements:
+                    </p>
+                    <div className="space-y-2">
+                      {improvement.contextualEnhancements.map((enhancement: any, idx: number) => (
+                        <div key={idx} className="pl-3 border-l-2" style={{ borderColor: 'var(--gradient-mid)' }}>
+                          <p className="text-xs font-medium">{enhancement.aspect}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            {enhancement.enhancement}
+                          </p>
+                          <p className="text-xs italic mt-1">
+                            Example: {enhancement.example}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Improvements by Criterion */}
+                {improvement.improvements && improvement.improvements.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Improvements by criterion:
+                    </p>
+                    <ul className="space-y-1">
+                      {improvement.improvements.map((imp: any, idx: number) => (
+                        <li key={idx} className="text-xs">
+                          <span className="font-medium">{imp.criterion.replace(/_/g, ' ')}: </span>
+                          <span>{imp.change}</span>
+                          {imp.pointsGained && (
+                            <span className="ml-1 font-medium" style={{ color: '#22C55E' }}>
+                              (+{imp.pointsGained} pts)
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Criteria Improvement Display */}
+            {isCriteriaImprovement && (
+              <>
+                {/* Improved Criterion */}
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                    Improved version:
+                  </p>
+                  <p className="text-sm font-medium">
+                    {improvement.improved}
+                  </p>
+                </div>
+
+                {/* Contextual Issues */}
+                {improvement.contextualIssues && improvement.contextualIssues.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Issues addressed:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {improvement.contextualIssues.map((issue: string, idx: number) => (
+                        <span 
+                          key={idx} 
+                          className="px-2 py-0.5 rounded text-xs"
+                          style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
+                        >
+                          {issue}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Specific Enhancements */}
+                {improvement.specificEnhancements && improvement.specificEnhancements.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Specific improvements:
+                    </p>
+                    <ul className="space-y-2">
+                      {improvement.specificEnhancements.map((enhancement: any, idx: number) => (
+                        <li key={idx} className="text-xs">
+                          <div className="flex items-start gap-1">
+                            <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <span className="font-medium">{enhancement.aspect}: </span>
+                              <span>{enhancement.domainRelevance}</span>
+                              {enhancement.concreteExample && (
+                                <p className="text-xs italic mt-0.5" style={{ color: 'var(--color-muted-foreground)' }}>
+                                  E.g., {enhancement.concreteExample}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
             
-            {improvement.changes && improvement.changes.length > 0 && (
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                  Improvements:
-                </p>
-                <ul className="space-y-1">
-                  {improvement.changes.slice(0, 3).map((change: any, idx: number) => (
-                    <li key={idx} className="text-xs flex items-start gap-1">
-                      <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-green-600" />
-                      <span>{change.fix || change.bestPractice}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
+            {/* Score Improvement (for both types) */}
             {improvement.estimatedScore && (
               <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
                 <p className="text-xs">
@@ -1047,6 +1163,120 @@ export default function AdminPage() {
               })}
             </div>
           </div>
+
+          {/* Domain-Specific Recommendations */}
+          {improvements?.criteriaImprovements && (
+            <div className="card mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                <h3 className="text-lg font-semibold">Domain-Specific Recommendations</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Task Context */}
+                {improvements.criteriaImprovements.taskContext && (
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-muted)' }}>
+                    <p className="text-sm font-medium mb-2">Task Context</p>
+                    <div className="space-y-1 text-xs">
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Domain: </span>
+                        <span className="font-medium">{improvements.criteriaImprovements.taskContext.domain}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Key Objectives: </span>
+                        <span>{improvements.criteriaImprovements.taskContext.keyObjectives.join(', ')}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-muted-foreground)' }}>Skills Assessed: </span>
+                        <span>{improvements.criteriaImprovements.taskContext.specificSkillsAssessed.join(', ')}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Criteria & Gaps */}
+                {improvements.criteriaImprovements.domainSpecificRecommendations && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Missing Criteria */}
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+                      <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <XCircle className="w-4 h-4" style={{ color: '#EF4444' }} />
+                        Missing Criteria
+                      </p>
+                      <ul className="space-y-1">
+                        {improvements.criteriaImprovements.domainSpecificRecommendations.missingCriteria.map((missing, idx) => (
+                          <li key={idx} className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            • {missing}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Topic-Specific Gaps */}
+                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)' }}>
+                      <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4" style={{ color: '#F59E0B' }} />
+                        Topic-Specific Gaps
+                      </p>
+                      <ul className="space-y-1">
+                        {improvements.criteriaImprovements.domainSpecificRecommendations.topicSpecificGaps.map((gap, idx) => (
+                          <li key={idx} className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            • {gap}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Additions */}
+                {improvements.criteriaImprovements.domainSpecificRecommendations?.suggestedAdditions?.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Plus className="w-4 h-4" style={{ color: '#22C55E' }} />
+                      Suggested New Criteria
+                    </p>
+                    <div className="space-y-2">
+                      {improvements.criteriaImprovements.domainSpecificRecommendations.suggestedAdditions.map((addition, idx) => (
+                        <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-muted)' }}>
+                          <p className="text-sm font-medium mb-1">{addition.criterion}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                            {addition.rationale}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contextual Alignment */}
+                {improvements.criteriaImprovements.contextualAlignment && (
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
+                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Target className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                      Contextual Alignment Assessment
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="font-medium">Prompt-Criteria Alignment: </span>
+                        <span>{improvements.criteriaImprovements.contextualAlignment.promptCriteriaAlignment}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Domain Coverage: </span>
+                        <span>{improvements.criteriaImprovements.contextualAlignment.domainCoverage}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Expected Impact: </span>
+                        <span className="font-semibold" style={{ color: '#22C55E' }}>
+                          {improvements.criteriaImprovements.contextualAlignment.improvementImpact}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </main>
       </div>
     )
