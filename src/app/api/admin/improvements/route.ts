@@ -1,3 +1,9 @@
+/**
+ * DEPRECATED: This route is no longer used in production.
+ * Improvements are now generated during submission grading and stored with the gradingResult.
+ * This endpoint is kept for development/testing purposes only.
+ */
+
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import logger from '@/lib/logger'

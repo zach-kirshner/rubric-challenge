@@ -388,12 +388,11 @@ export default function AdminPage() {
   const router = useRouter()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [selectedSubmission, setSelectedSubmission] = useState<EvaluationData | null>(null)
+  const [improvements, setImprovements] = useState<Improvements | null>(null)
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [currentView, setCurrentView] = useState<'dashboard' | 'submissions'>('dashboard')
+  const [currentView, setCurrentView] = useState<'submissions' | 'dashboard'>('dashboard')
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
-  const [improvements, setImprovements] = useState<Improvements | null>(null)
-  const [isLoadingImprovements, setIsLoadingImprovements] = useState(false)
 
   // Check admin access
   useEffect(() => {
@@ -454,32 +453,14 @@ export default function AdminPage() {
       const data = await response.json()
       setSelectedSubmission(data)
       
-      // Also fetch improvements
-      fetchImprovements(id)
+      // Extract improvements from gradingResult if available
+      if (data.evaluation?.gradingResult?.improvements) {
+        setImprovements(data.evaluation.gradingResult.improvements)
+      } else {
+        setImprovements(null)
+      }
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error), 'Error fetching submission details')
-    }
-  }
-
-  const fetchImprovements = async (submissionId: string) => {
-    setIsLoadingImprovements(true)
-    try {
-      console.log('Fetching improvements for submission:', submissionId)
-      const response = await fetch(`/api/admin/improvements?id=${submissionId}`)
-      
-      if (!response.ok) {
-        console.error('Failed to fetch improvements:', response.status)
-        throw new Error('Failed to fetch improvements')
-      }
-      
-      const data = await response.json()
-      console.log('Improvements data received:', data)
-      setImprovements(data)
-    } catch (error) {
-      console.error('Error fetching improvements:', error)
-      logger.error(error instanceof Error ? error.message : String(error), 'Error fetching improvements')
-    } finally {
-      setIsLoadingImprovements(false)
     }
   }
 
@@ -656,12 +637,7 @@ export default function AdminPage() {
           <div className="card mb-6">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold">Prompt</h2>
-              {isLoadingImprovements ? (
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="spinner" style={{ width: '16px', height: '16px' }} />
-                  <span style={{ color: 'var(--color-muted-foreground)' }}>Loading improvements...</span>
-                </div>
-              ) : improvements?.promptImprovement && (
+              {improvements?.promptImprovement && (
                 <div className="flex items-center gap-2 text-sm">
                   <Info className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
                   <span style={{ color: 'var(--color-muted-foreground)' }}>Hover to see improved version</span>
