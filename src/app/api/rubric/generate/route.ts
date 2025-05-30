@@ -270,14 +270,92 @@ Return the rubric as JSON:
 
       // Parse the response
       const responseText = content.text
-      const jsonMatch = responseText.match(/\{[\s\S]*"rubricItems"[\s\S]*\}/)
       
-      if (!jsonMatch) {
+      // Try multiple parsing strategies
+      let rubricData
+      
+      // Strategy 1: Look for JSON in code blocks
+      const codeBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+      if (codeBlockMatch) {
+        try {
+          rubricData = JSON.parse(codeBlockMatch[1])
+        } catch (e) {
+          // Continue to next strategy
+        }
+      }
+      
+      // Strategy 2: Look for any JSON object with rubricItems
+      if (!rubricData) {
+        const jsonMatch = responseText.match(/\{[\s\S]*?"rubricItems"[\s\S]*?\}/)
+        if (jsonMatch) {
+          try {
+            rubricData = JSON.parse(jsonMatch[0])
+          } catch (e) {
+            // Continue to next strategy
+          }
+        }
+      }
+      
+      // Strategy 3: Look for any valid JSON object
+      if (!rubricData) {
+        const allJsonMatches = responseText.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g)
+        if (allJsonMatches) {
+          for (const match of allJsonMatches) {
+            try {
+              const parsed = JSON.parse(match)
+              if (parsed.rubricItems && Array.isArray(parsed.rubricItems)) {
+                rubricData = parsed
+                break
+              }
+            } catch (e) {
+              // Continue to next match
+            }
+          }
+        }
+      }
+      
+      // Strategy 4: More aggressive JSON extraction
+      if (!rubricData) {
+        const lines = responseText.split('\n')
+        let jsonStart = -1
+        let jsonEnd = -1
+        let braceCount = 0
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim()
+          for (const char of line) {
+            if (char === '{') {
+              if (jsonStart === -1) jsonStart = i
+              braceCount++
+            } else if (char === '}') {
+              braceCount--
+              if (braceCount === 0 && jsonStart !== -1) {
+                jsonEnd = i
+                break
+              }
+            }
+          }
+          if (jsonEnd !== -1) break
+        }
+        
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          const jsonText = lines.slice(jsonStart, jsonEnd + 1).join('\n')
+          try {
+            const parsed = JSON.parse(jsonText)
+            if (parsed.rubricItems && Array.isArray(parsed.rubricItems)) {
+              rubricData = parsed
+            }
+          } catch (e) {
+            // Final fallback will trigger below
+          }
+        }
+      }
+      
+      if (!rubricData || !rubricData.rubricItems || !Array.isArray(rubricData.rubricItems)) {
+        logger.error({ responseText: responseText.substring(0, 500) + '...' }, 'Failed to parse rubric from Claude response')
         throw new Error('Could not parse rubric from response')
       }
 
-      const rubricData = JSON.parse(jsonMatch[0])
-      
       // Validate and enhance rubric items
       rubricData.rubricItems = rubricData.rubricItems.map((item: any, index: number) => ({
         ...item,
