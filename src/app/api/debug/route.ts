@@ -1,24 +1,32 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  try {
-    return NextResponse.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
-        anthropicKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...',
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
-        databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 30) + '...',
-        databaseHost: process.env.DATABASE_URL?.match(/@([^:]+)/)?.[1] || 'not found',
-        hasAdminEmails: !!process.env.ADMIN_EMAILS,
-      }
-    })
-  } catch (error) {
-    return NextResponse.json({
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+  const debug: {
+    hasDatabase: boolean
+    databaseUrlSet: string
+    anthropicKeySet: string
+    nodeEnv: string | undefined
+    timestamp: string
+    databaseConnection?: string
+    databaseError?: string
+  } = {
+    hasDatabase: !!process.env.DATABASE_URL,
+    databaseUrlSet: process.env.DATABASE_URL ? 'Yes' : 'No',
+    anthropicKeySet: process.env.ANTHROPIC_API_KEY ? 'Yes' : 'No',
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   }
+
+  // Try to connect to database
+  try {
+    await prisma.$connect()
+    debug.databaseConnection = 'Success'
+    await prisma.$disconnect()
+  } catch (error) {
+    debug.databaseConnection = 'Failed'
+    debug.databaseError = error instanceof Error ? error.message : 'Unknown error'
+  }
+
+  return NextResponse.json(debug)
 } 
