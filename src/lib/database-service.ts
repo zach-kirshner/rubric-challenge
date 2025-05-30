@@ -23,36 +23,41 @@ export interface DatabaseSubmission {
   gradedAt: Date | null
 }
 
+// Helper to ensure clean connections
+const withCleanConnection = async <T>(operation: () => Promise<T>): Promise<T> => {
+  try {
+    const result = await operation()
+    return result
+  } catch (error) {
+    logger.error('Database operation failed:', error instanceof Error ? error.message : String(error))
+    throw error
+  } finally {
+    // In serverless environments, disconnect after each operation
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await prisma.$disconnect()
+      } catch (disconnectError) {
+        logger.warn('Error disconnecting Prisma:', disconnectError instanceof Error ? disconnectError.message : String(disconnectError))
+      }
+    }
+  }
+}
+
 class DatabaseService {
   async createUser(email: string, fullName: string) {
-    try {
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      })
-
-      if (existingUser) {
-        // Update fullName if it's different
-        if (existingUser.fullName !== fullName) {
-          return await prisma.user.update({
-            where: { email },
-            data: { fullName }
-          })
-        }
-        return existingUser
+    return withCleanConnection(async () => {
+      try {
+        const user = await prisma.user.upsert({
+          where: { email },
+          update: { fullName },
+          create: { email, fullName }
+        })
+        return user
+      } catch (error) {
+        logger.error('Error creating/updating user', error instanceof Error ? error.message : String(error))
+        throw error
       }
-
-      // Create new user
-      return await prisma.user.create({
-        data: {
-          email,
-          fullName
-        }
-      })
-    } catch (error) {
-      logger.error('Error creating/updating user', error instanceof Error ? error.message : String(error))
-      throw error
-    }
+    })
   }
 
   async addSubmission(submissionData: any) {
@@ -110,42 +115,46 @@ class DatabaseService {
   }
 
   async getSubmission(id: string): Promise<DatabaseSubmission | null> {
-    try {
-      const submission = await prisma.submission.findUnique({
-        where: { id },
-        include: {
-          user: true,
-          criteria: true,
-          criteriaActions: true
-        }
-      })
+    return withCleanConnection(async () => {
+      try {
+        const submission = await prisma.submission.findUnique({
+          where: { id },
+          include: {
+            user: true,
+            criteria: true,
+            criteriaActions: true
+          }
+        })
 
-      if (!submission) return null
-      return this.formatSubmission(submission)
-    } catch (error) {
-      logger.error('Error fetching submission from database', error instanceof Error ? error.message : String(error))
-      return null
-    }
+        if (!submission) return null
+        return this.formatSubmission(submission)
+      } catch (error) {
+        logger.error('Error fetching submission from database', error instanceof Error ? error.message : String(error))
+        return null
+      }
+    })
   }
 
   async getAllSubmissions(): Promise<DatabaseSubmission[]> {
-    try {
-      const submissions = await prisma.submission.findMany({
-        include: {
-          user: true,
-          criteria: true,
-          criteriaActions: true
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      })
+    return withCleanConnection(async () => {
+      try {
+        const submissions = await prisma.submission.findMany({
+          include: {
+            user: true,
+            criteria: true,
+            criteriaActions: true
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
 
-      return submissions.map(submission => this.formatSubmission(submission))
-    } catch (error) {
-      logger.error('Error fetching submissions from database', error instanceof Error ? error.message : String(error))
-      return []
-    }
+        return submissions.map(submission => this.formatSubmission(submission))
+      } catch (error) {
+        logger.error('Error fetching submissions from database', error instanceof Error ? error.message : String(error))
+        return []
+      }
+    })
   }
 
   async updateSubmission(id: string, updates: any) {
