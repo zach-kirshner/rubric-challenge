@@ -236,6 +236,8 @@ NEGATIVE CRITERIA (deduct points when TRUE):
 - "The response provides incorrect information about THC regulations"
 - "The response includes irrelevant information not related to the task"
 
+IMPORTANT: ALWAYS return a valid JSON response, even if the task prompt is vague or inadequate. If the prompt is too vague, create generic criteria and include feedback in the response.
+
 Return the rubric as JSON:
 {
   "rubricItems": [
@@ -247,7 +249,9 @@ Return the rubric as JSON:
       "source": "explicit|implicit", 
       "category": "instruction_following|truthfulness|reasoning|presentation|formatting"
     }
-  ]
+  ],
+  "promptQuality": "excellent|good|fair|poor",
+  "feedback": "Optional feedback about the prompt quality or suggestions for improvement"
 }`
 
       const message = await anthropic.messages.create({
@@ -258,7 +262,7 @@ Return the rubric as JSON:
         messages: [
           {
             role: 'user',
-            content: `Create a comprehensive evaluation rubric for the following task:\n\n${prompt}\n\nGenerate 10-30 specific binary criteria that can be used to evaluate if an AI successfully completes this task.`
+            content: `Create a comprehensive evaluation rubric for the following task:\n\n"${prompt}"\n\nIf this task is too vague or lacks sufficient detail (such as single words like "test" or very short phrases), set promptQuality to "poor" and provide helpful feedback explaining what information is needed. Otherwise, generate 10-30 specific binary criteria that can be used to evaluate if an AI successfully completes this task.`
           }
         ]
       })
@@ -354,6 +358,27 @@ Return the rubric as JSON:
       if (!rubricData || !rubricData.rubricItems || !Array.isArray(rubricData.rubricItems)) {
         logger.error({ responseText: responseText.substring(0, 500) + '...' }, 'Failed to parse rubric from Claude response')
         throw new Error('Could not parse rubric from response')
+      }
+      
+      // Check if Claude indicated the prompt is poor quality
+      if (rubricData.promptQuality === 'poor' && rubricData.feedback) {
+        logger.warn({ 
+          email: normalizedEmail, 
+          promptQuality: rubricData.promptQuality,
+          feedback: rubricData.feedback 
+        }, 'Poor quality prompt detected')
+        
+        return NextResponse.json({
+          error: 'Prompt quality issue',
+          message: rubricData.feedback,
+          suggestion: 'Please provide a more detailed and specific task description with clear instructions, requirements, and expected outcomes.'
+        }, { status: 400 })
+      }
+      
+      // Validate that we have actual criteria
+      if (rubricData.rubricItems.length === 0) {
+        logger.error({ email: normalizedEmail }, 'No rubric items generated')
+        throw new Error('No evaluation criteria were generated')
       }
 
       // Validate and enhance rubric items

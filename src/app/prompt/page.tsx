@@ -101,6 +101,16 @@ export default function PromptPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        
+        // Handle detailed error responses for poor prompts
+        if (errorData.error === 'Prompt quality issue') {
+          let errorMessage = errorData.message || 'Your prompt needs more detail.'
+          if (errorData.suggestion) {
+            errorMessage += '\n\n' + errorData.suggestion
+          }
+          throw new Error(errorMessage)
+        }
+        
         throw new Error(errorData.error || 'Failed to generate rubric')
       }
 
@@ -550,7 +560,7 @@ export default function PromptPage() {
                 <AlertCircle className="w-5 h-5 mt-0.5" style={{ color: '#EF4444' }} />
                 <div className="flex-1">
                   <p className="text-sm font-medium" style={{ color: '#EF4444' }}>Error</p>
-                  <p className="text-sm mt-1">{error}</p>
+                  <div className="text-sm mt-1" style={{ whiteSpace: 'pre-line' }}>{error}</div>
                 </div>
               </div>
             </div>
