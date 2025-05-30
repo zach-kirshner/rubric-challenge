@@ -148,6 +148,77 @@ class DatabaseService {
     }
   }
 
+  // Optimized method for dashboard - only fetches necessary data
+  async getDashboardSubmissions(): Promise<any[]> {
+    try {
+      const submissions = await prisma.submission.findMany({
+        select: {
+          id: true,
+          userId: true,
+          prompt: true,
+          status: true,
+          submittedAt: true,
+          gradingResult: true,
+          gradedAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true
+            }
+          },
+          // Only count actions, don't fetch all data
+          _count: {
+            select: {
+              criteriaActions: true,
+              criteria: true
+            }
+          },
+          // Only fetch aggregated criteria stats
+          criteria: {
+            select: {
+              source: true,
+              status: true
+            }
+          }
+        },
+        orderBy: {
+          submittedAt: 'desc'
+        },
+        // Limit to last 500 submissions for performance
+        take: 500
+      })
+
+      return submissions.map(submission => {
+        // Calculate stats from minimal criteria data
+        const stats = {
+          originalCount: submission.criteria.filter((c: any) => c.source === 'ai_generated').length,
+          finalCount: submission.criteria.filter((c: any) => c.status !== 'deleted').length,
+          deletedCount: submission.criteria.filter((c: any) => c.status === 'deleted').length,
+          editedCount: submission.criteria.filter((c: any) => c.status === 'edited').length,
+          addedCount: submission.criteria.filter((c: any) => c.source === 'user_added').length,
+        }
+
+        return {
+          id: submission.id,
+          userId: submission.userId,
+          email: submission.user.email,
+          fullName: submission.user.fullName,
+          prompt: submission.prompt,
+          status: submission.status,
+          submittedAt: submission.submittedAt,
+          gradingResult: submission.gradingResult,
+          gradedAt: submission.gradedAt,
+          stats,
+          totalActions: submission._count.criteriaActions
+        }
+      })
+    } catch (error) {
+      logger.error('Error fetching dashboard submissions', error instanceof Error ? error.message : String(error))
+      return []
+    }
+  }
+
   async updateSubmission(id: string, updates: any) {
     try {
       const submission = await prisma.submission.update({

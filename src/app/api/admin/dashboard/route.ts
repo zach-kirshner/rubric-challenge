@@ -5,7 +5,7 @@ import databaseService from '@/lib/database-service'
 export async function GET(request: NextRequest) {
   try {
     // Get all submissions with user data for analytics
-    const allSubmissions = await databaseService.getAllSubmissions()
+    const allSubmissions = await databaseService.getDashboardSubmissions()
     
     // Calculate overview statistics
     const totalUsers = new Set(allSubmissions.map(s => s.userId)).size
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         stats: submission.stats
       })
       user.totalSubmissions++
-      user.totalActionsCount += submission.criteriaActions.length
+      user.totalActionsCount += submission.totalActions || 0
       
       if (new Date(submission.submittedAt) < new Date(user.firstSubmissionAt)) {
         user.firstSubmissionAt = submission.submittedAt
