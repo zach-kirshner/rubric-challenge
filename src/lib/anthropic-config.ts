@@ -5,9 +5,13 @@
 
 // Available Claude models
 export const CLAUDE_MODELS = {
+  'claude-4-opus': 'claude-opus-4-20250514',
+  'claude-4-sonnet': 'claude-sonnet-4-20250514',
+  'claude-3.7-sonnet': 'claude-3-7-sonnet-20250219',
+  'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
+  'claude-3.5-haiku': 'claude-3-5-haiku-20241022',
   'claude-3-opus': 'claude-3-opus-20240229',
   'claude-3-sonnet': 'claude-3-sonnet-20240229',
-  'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
   'claude-3-haiku': 'claude-3-haiku-20240307',
 } as const
 
@@ -16,25 +20,29 @@ export type ClaudeModelId = typeof CLAUDE_MODELS[ClaudeModelKey]
 
 /**
  * Get the default Claude model to use
- * Checks environment variable first, falls back to Claude 3.5 Sonnet
+ * Checks environment variable first, falls back to Claude 4 Sonnet
  */
 export function getDefaultModel(): ClaudeModelId {
   const envModel = process.env.DEFAULT_MODEL || process.env.ANTHROPIC_DEFAULT_MODEL
   
   if (envModel) {
-    // If it's a direct model ID (starts with claude-)
-    if (envModel.startsWith('claude-')) {
-      return envModel as ClaudeModelId
-    }
-    
-    // If it's a key from our CLAUDE_MODELS object
+    // Check if it's a key from our CLAUDE_MODELS object
     if (envModel in CLAUDE_MODELS) {
       return CLAUDE_MODELS[envModel as ClaudeModelKey]
     }
+    
+    // Check if it's a valid direct model ID
+    const validModelIds = Object.values(CLAUDE_MODELS)
+    if (validModelIds.includes(envModel as ClaudeModelId)) {
+      return envModel as ClaudeModelId
+    }
+    
+    // Log warning if invalid model specified
+    console.warn(`Invalid model specified in environment: ${envModel}. Falling back to default.`)
   }
   
-  // Default to Claude 3.5 Sonnet for best balance of performance and cost
-  return CLAUDE_MODELS['claude-3.5-sonnet']
+  // Default to Claude 4 Sonnet for best balance of performance and cost
+  return CLAUDE_MODELS['claude-4-sonnet']
 }
 
 /**
