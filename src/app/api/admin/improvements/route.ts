@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import logger from '@/lib/logger'
 import Anthropic from '@anthropic-ai/sdk'
 import { getModelForTask, TASK_CONFIGS } from '@/lib/anthropic-config'
 
-const prisma = new PrismaClient()
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
