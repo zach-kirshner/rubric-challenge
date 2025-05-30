@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Sparkles, Lightbulb, Info } from 'lucide-react'
+import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Lightbulb } from 'lucide-react'
 import logger from '@/lib/logger'
 
 interface Submission {
@@ -75,199 +75,6 @@ interface DashboardData {
   submissionTimeline: { date: string; count: number }[]
 }
 
-interface Improvements {
-  promptImprovement: {
-    improvedPrompt: string
-    improvements: Array<{
-      criterion: string
-      change: string
-      reason: string
-      pointsGained?: string
-    }>
-    penaltiesAddressed?: Array<{
-      penalty: string
-      solution: string
-    }>
-    estimatedScore?: {
-      before: string
-      after: string
-      breakdown: {
-        realism_and_interest: number
-        difficulty_and_complexity: number
-        research_requirements: number
-        synthesis_and_reasoning: number
-        universality_and_objectivity: number
-        scope_and_specificity: number
-      }
-    }
-  }
-  criteriaImprovements: {
-    improvements: Array<{
-      originalId: string
-      original: string
-      violations?: string[]
-      improved: string
-      changes: Array<{
-        issue: string
-        fix: string
-        bestPractice: string
-      }>
-      selfContainedElements?: string[]
-    }>
-    meceAnalysis: {
-      overlaps: string[]
-      gaps: string[]
-      recommendations?: string[]
-    }
-    bestPracticesSummary?: {
-      atomicityScore: string
-      selfContainedScore: string
-      diversityScore: string
-      estimatedQualityImprovement: string
-    }
-  }
-}
-
-// Add a new Tooltip component
-const ImprovementTooltip = ({ 
-  children, 
-  improvement 
-}: { 
-  children: React.ReactNode
-  improvement?: any 
-}) => {
-  const [isVisible, setIsVisible] = useState(false)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const handleMouseEnter = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const viewportWidth = window.innerWidth
-    const tooltipWidth = 400 // approximate width
-    
-    // Position tooltip to avoid going off-screen
-    let x = rect.left + rect.width / 2
-    if (x + tooltipWidth / 2 > viewportWidth) {
-      x = viewportWidth - tooltipWidth / 2 - 20
-    } else if (x - tooltipWidth / 2 < 0) {
-      x = tooltipWidth / 2 + 20
-    }
-    
-    setPosition({
-      x,
-      y: rect.top - 10
-    })
-    
-    // Add delay before showing
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(true)
-    }, 500)
-  }
-
-  const handleMouseLeave = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    setIsVisible(false)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
-
-  return (
-    <div 
-      className="relative inline"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
-      {improvement && isVisible && (
-        <div 
-          className={`fixed z-50 p-4 rounded-lg shadow-xl max-w-md transition-opacity duration-200 ${
-            isVisible ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ 
-            left: position.x,
-            top: position.y,
-            transform: 'translate(-50%, -100%)',
-            backgroundColor: 'var(--color-background)',
-            border: '1px solid var(--color-border)',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
-            <span className="text-sm font-semibold">AI-Suggested Improvement</span>
-          </div>
-          
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                Improved version:
-              </p>
-              <p className="text-sm font-medium">
-                {improvement.improved || improvement.improvedPrompt}
-              </p>
-            </div>
-            
-            {improvement.violations && improvement.violations.length > 0 && (
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                  Issues fixed:
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {improvement.violations.map((violation: string, idx: number) => (
-                    <span 
-                      key={idx} 
-                      className="px-2 py-0.5 rounded text-xs"
-                      style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
-                    >
-                      {violation}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {improvement.changes && improvement.changes.length > 0 && (
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
-                  Improvements:
-                </p>
-                <ul className="space-y-1">
-                  {improvement.changes.slice(0, 3).map((change: any, idx: number) => (
-                    <li key={idx} className="text-xs flex items-start gap-1">
-                      <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-green-600" />
-                      <span>{change.fix || change.bestPractice}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {improvement.estimatedScore && (
-              <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
-                <p className="text-xs">
-                  <span style={{ color: 'var(--color-muted-foreground)' }}>Score improvement: </span>
-                  <span className="font-medium" style={{ color: '#EF4444' }}>
-                    {improvement.estimatedScore.before}
-                  </span>
-                  <span style={{ color: 'var(--color-muted-foreground)' }}> → </span>
-                  <span className="font-medium" style={{ color: '#22C55E' }}>
-                    {improvement.estimatedScore.after}
-                  </span>
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function AdminPage() {
   const router = useRouter()
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -276,8 +83,6 @@ export default function AdminPage() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'submissions'>('dashboard')
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
-  const [improvements, setImprovements] = useState<Improvements | null>(null)
-  const [isLoadingImprovements, setIsLoadingImprovements] = useState(false)
 
   // Check admin access
   useEffect(() => {
@@ -333,37 +138,11 @@ export default function AdminPage() {
   const fetchSubmissionDetails = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/submissions?id=${id}`)
-      if (!response.ok) throw new Error('Failed to fetch')
-      
+      if (!response.ok) throw new Error('Failed to fetch submission details')
       const data = await response.json()
       setSelectedSubmission(data)
-      
-      // Also fetch improvements
-      fetchImprovements(id)
     } catch (error) {
-      logger.error(error instanceof Error ? error.message : String(error), 'Error fetching submission details')
-    }
-  }
-
-  const fetchImprovements = async (submissionId: string) => {
-    setIsLoadingImprovements(true)
-    try {
-      console.log('Fetching improvements for submission:', submissionId)
-      const response = await fetch(`/api/admin/improvements?id=${submissionId}`)
-      
-      if (!response.ok) {
-        console.error('Failed to fetch improvements:', response.status)
-        throw new Error('Failed to fetch improvements')
-      }
-      
-      const data = await response.json()
-      console.log('Improvements data received:', data)
-      setImprovements(data)
-    } catch (error) {
-      console.error('Error fetching improvements:', error)
-      logger.error(error instanceof Error ? error.message : String(error), 'Error fetching improvements')
-    } finally {
-      setIsLoadingImprovements(false)
+      console.error('Error fetching submission details:', error)
     }
   }
 
@@ -501,7 +280,6 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setSelectedSubmission(null)
-                    setImprovements(null)
                   }}
                   className="icon-button"
                 >
@@ -540,23 +318,10 @@ export default function AdminPage() {
           <div className="card mb-6">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold">Prompt</h2>
-              {isLoadingImprovements ? (
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="spinner" style={{ width: '16px', height: '16px' }} />
-                  <span style={{ color: 'var(--color-muted-foreground)' }}>Loading improvements...</span>
-                </div>
-              ) : improvements?.promptImprovement && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Info className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
-                  <span style={{ color: 'var(--color-muted-foreground)' }}>Hover to see improved version</span>
-                </div>
-              )}
             </div>
-            <ImprovementTooltip improvement={improvements?.promptImprovement}>
-              <p className="text-sm cursor-help" style={{ color: 'var(--color-muted-foreground)' }}>
-                {selectedSubmission.submission.prompt}
-              </p>
-            </ImprovementTooltip>
+            <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+              {selectedSubmission.submission.prompt}
+            </p>
             <div className="flex gap-6 mt-4 text-sm">
               <div>
                 <span style={{ color: 'var(--color-muted-foreground)' }}>User: </span>
@@ -992,20 +757,9 @@ export default function AdminPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Final Criteria ({selectedSubmission.criteria.final.length})</h3>
-              {improvements?.criteriaImprovements && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Info className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
-                  <span style={{ color: 'var(--color-muted-foreground)' }}>Hover over criteria to see improvements</span>
-                </div>
-              )}
             </div>
             <div className="space-y-3">
               {selectedSubmission.criteria.final.map((criterion, index) => {
-                // Find improvement for this criterion
-                const improvement = improvements?.criteriaImprovements?.improvements.find(
-                  imp => imp.originalId === criterion.id || imp.original === criterion.text
-                )
-                
                 return (
                   <div key={criterion.id} className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-1">
@@ -1022,23 +776,15 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <ImprovementTooltip improvement={improvement}>
-                        <p className={`text-sm ${improvement ? 'cursor-help' : ''}`}>
-                          {criterion.finalText || criterion.text}
-                        </p>
-                      </ImprovementTooltip>
+                      <p className="text-sm">
+                        {criterion.finalText || criterion.text}
+                      </p>
                       <div className="flex gap-4 mt-1 text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
                         {criterion.source === 'user_added' && (
                           <span className="text-green-600">User Added</span>
                         )}
                         {criterion.status === 'edited' && (
                           <span className="text-blue-600">Edited</span>
-                        )}
-                        {improvement && (
-                          <span className="flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" style={{ color: 'var(--gradient-mid)' }} />
-                            Improvement available
-                          </span>
                         )}
                       </div>
                     </div>
