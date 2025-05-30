@@ -5,9 +5,10 @@
 
 // Available Claude models
 export const CLAUDE_MODELS = {
-  'claude-4-opus': 'claude-opus-4-20250514',
-  'claude-4-sonnet': 'claude-sonnet-4-20250514',
+  'claude-3-opus': 'claude-3-opus-20240229',
+  'claude-3-sonnet': 'claude-3-sonnet-20240229',
   'claude-3.5-sonnet': 'claude-3-5-sonnet-20241022',
+  'claude-3-haiku': 'claude-3-haiku-20240307',
 } as const
 
 export type ClaudeModelKey = keyof typeof CLAUDE_MODELS
@@ -15,7 +16,7 @@ export type ClaudeModelId = typeof CLAUDE_MODELS[ClaudeModelKey]
 
 /**
  * Get the default Claude model to use
- * Checks environment variable first, falls back to Claude 4 Sonnet
+ * Checks environment variable first, falls back to Claude 3.5 Sonnet
  */
 export function getDefaultModel(): ClaudeModelId {
   const envModel = process.env.DEFAULT_MODEL || process.env.ANTHROPIC_DEFAULT_MODEL
@@ -32,8 +33,8 @@ export function getDefaultModel(): ClaudeModelId {
     }
   }
   
-  // Default to Claude 4 Sonnet for best balance of performance and cost
-  return CLAUDE_MODELS['claude-4-sonnet']
+  // Default to Claude 3.5 Sonnet for best balance of performance and cost
+  return CLAUDE_MODELS['claude-3.5-sonnet']
 }
 
 /**
