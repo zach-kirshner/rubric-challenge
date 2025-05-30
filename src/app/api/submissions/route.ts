@@ -457,17 +457,39 @@ export async function POST(request: NextRequest) {
     // Store submission using persistent storage
     await databaseService.addSubmission(submission)
     
-    // Automatically grade the submission
-    logger.info({ submissionId }, 'Auto-grading submission')
-    const gradingResult = await gradeSubmission(submission)
+    // Start grading asynchronously (don't wait for it to complete)
+    logger.info({ submissionId }, 'Starting async auto-grading')
     
-    // Update submission with grading result
-    if (gradingResult) {
-      await databaseService.updateSubmission(submissionId, {
-        gradingResult,
-        gradedAt: new Date()
-      })
-    }
+    // Fire and forget - grade in the background
+    gradeSubmission(submission).then(async (gradingResult) => {
+      if (gradingResult) {
+        try {
+          await databaseService.updateSubmission(submissionId, {
+            gradingResult,
+            gradedAt: new Date()
+          })
+          logger.info({ 
+            submissionId,
+            score: gradingResult.score,
+            grade: gradingResult.grade,
+            promptScore: gradingResult.promptGrade?.score,
+            promptGrade: gradingResult.promptGrade?.grade
+          }, 'Async grading completed successfully')
+        } catch (error) {
+          logger.error({ 
+            submissionId,
+            error: error instanceof Error ? error.message : String(error)
+          }, 'Failed to update submission with grading result')
+        }
+      } else {
+        logger.warn({ submissionId }, 'Async grading returned no result')
+      }
+    }).catch((error) => {
+      logger.error({ 
+        submissionId,
+        error: error instanceof Error ? error.message : String(error)
+      }, 'Async grading failed')
+    })
     
     logger.info({ 
       submissionId,
@@ -477,10 +499,8 @@ export async function POST(request: NextRequest) {
       actionsCount: criteriaActions.length,
       deletedCount: criteria.filter(c => c.status === 'deleted').length,
       editedCount: criteria.filter(c => c.status === 'edited').length,
-      addedCount: criteria.filter(c => c.source === 'user_added').length,
-      score: gradingResult?.score,
-      grade: gradingResult?.grade
-    }, 'Submission created and graded successfully')
+      addedCount: criteria.filter(c => c.source === 'user_added').length
+    }, 'Submission created successfully (grading in progress)')
 
     return NextResponse.json({ 
       success: true, 
