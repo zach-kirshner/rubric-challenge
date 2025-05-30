@@ -31,12 +31,7 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
     db: {
       url: getDatabaseUrl()
     }
-  },
-  // Additional configuration for serverless
-  ...(process.env.NODE_ENV === 'production' && {
-    // Disable connection pooling in Prisma (let pgbouncer handle it)
-    datasourceUrl: getDatabaseUrl()
-  })
+  }
 })
 
 // Ensure we only create one instance in development
