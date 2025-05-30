@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Plus, Save, CheckCircle2, XCircle, Edit3, Trash2, GripVertical, ArrowLeft } from 'lucide-react'
+import { Plus, Save, CheckCircle2, XCircle, Edit3, Trash2, GripVertical, ArrowLeft, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import SortableItem from '@/components/SortableItem'
 import JustificationModal from '@/components/JustificationModal'
 import { RubricItem, Action } from '@/types'
@@ -26,6 +26,7 @@ export default function RubricPage() {
   const [newIsPositive, setNewIsPositive] = useState(true)
   const [newJustification, setNewJustification] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
   const addFormRef = useRef<HTMLDivElement>(null)
 
   const sensors = useSensors(
@@ -317,6 +318,41 @@ export default function RubricPage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Prompt Reference */}
+        <div className="card glass mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
+          <button
+            onClick={() => setShowPrompt(!showPrompt)}
+            className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-black/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                <FileText className="w-4 h-4" style={{ color: '#3B82F6' }} />
+              </div>
+              <span className="font-medium">Reference Original Prompt</span>
+              <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-muted-foreground)' }}>
+                {prompt.length} characters
+              </span>
+            </div>
+            {showPrompt ? (
+              <ChevronUp className="w-4 h-4" style={{ color: 'var(--color-muted-foreground)' }} />
+            ) : (
+              <ChevronDown className="w-4 h-4" style={{ color: 'var(--color-muted-foreground)' }} />
+            )}
+          </button>
+          
+          {showPrompt && (
+            <div className="mt-4 pt-4 border-t animate-in" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="prose prose-sm max-w-none">
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-muted)' }}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {prompt}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Rubric items */}
