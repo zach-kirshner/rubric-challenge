@@ -609,122 +609,63 @@ function getMockPromptImprovement(originalPrompt: string) {
 }
 
 function getMockCriteriaImprovements(criteria: any[]) {
-  const sampleCriteria = criteria.slice(0, 3)
-  
-  // Try to detect domain from criteria content
-  const allText = sampleCriteria.map((c: any) => c.text).join(' ').toLowerCase()
-  const isClimateRelated = allText.includes('climate') || allText.includes('environment') || allText.includes('carbon')
-  const isTechRelated = allText.includes('code') || allText.includes('algorithm') || allText.includes('software')
-  
-  if (isClimateRelated) {
-    return {
-      taskContext: {
-        domain: "Climate science and environmental assessment",
-        keyObjectives: ["Evaluate climate impact", "Analyze mitigation strategies", "Assess adaptation measures"],
-        specificSkillsAssessed: ["Climate data analysis", "Model interpretation", "Policy evaluation"]
-      },
-      improvements: sampleCriteria.map((c: any) => ({
-        originalId: c.id,
-        original: c.finalText || c.text,
-        contextualIssues: ["Too generic for climate assessment", "Missing specific climate metrics"],
-        improved: `${c.finalText || c.text} using IPCC AR6 methodology and includes specific CO2e calculations`,
-        specificEnhancements: [
-          {
-            aspect: "Climate-specific metrics",
-            domainRelevance: "Uses standardized climate science measurements",
-            concreteExample: "Calculate emissions in metric tons CO2e using IPCC emission factors"
-          }
-        ]
-      })),
-      domainSpecificRecommendations: {
-        missingCriteria: ["No criterion for uncertainty ranges in climate projections", "Missing requirement for regional impact assessment"],
-        topicSpecificGaps: ["Climate model comparison not evaluated", "Adaptation strategies not assessed"],
-        suggestedAdditions: [
-          {
-            criterion: "Includes uncertainty ranges (e.g., 1.5°C ± 0.2°C) for all climate projections",
-            rationale: "Essential for scientific accuracy in climate assessments"
-          }
-        ]
-      },
-      contextualAlignment: {
-        promptCriteriaAlignment: "Criteria need more climate-specific metrics and methodologies",
-        domainCoverage: "Currently covers 60% of key climate assessment areas",
-        improvementImpact: "+20 points by adding domain-specific requirements"
+  // Analyze all criteria and pick the weakest ones
+  const weakCriteria = criteria
+    .map((c: any) => {
+      const text = (c.finalText || c.text).toLowerCase()
+      let weaknessScore = 0
+      
+      // Check for vague terms
+      if (text.includes('good') || text.includes('adequate') || text.includes('appropriate')) {
+        weaknessScore += 3
       }
-    }
-  } else if (isTechRelated) {
-    return {
-      taskContext: {
-        domain: "Software engineering and technical analysis",
-        keyObjectives: ["Evaluate technical implementation", "Analyze performance", "Assess scalability"],
-        specificSkillsAssessed: ["Algorithm analysis", "Code quality", "System design"]
-      },
-      improvements: sampleCriteria.map((c: any) => ({
-        originalId: c.id,
-        original: c.finalText || c.text,
-        contextualIssues: ["Missing technical specificity", "No performance metrics"],
-        improved: `${c.finalText || c.text} with Big O complexity analysis and benchmark results`,
-        specificEnhancements: [
-          {
-            aspect: "Performance metrics",
-            domainRelevance: "Quantifies technical efficiency",
-            concreteExample: "Provide runtime complexity (e.g., O(n log n)) and actual benchmark times"
-          }
-        ]
-      })),
-      domainSpecificRecommendations: {
-        missingCriteria: ["No criterion for code quality metrics", "Missing security assessment"],
-        topicSpecificGaps: ["Scalability not evaluated", "Error handling not assessed"],
-        suggestedAdditions: [
-          {
-            criterion: "Code maintains cyclomatic complexity below 10 for all functions",
-            rationale: "Industry standard for maintainable code"
-          }
-        ]
-      },
-      contextualAlignment: {
-        promptCriteriaAlignment: "Criteria need more technical depth and measurable metrics",
-        domainCoverage: "Currently covers 65% of software engineering best practices",
-        improvementImpact: "+18 points by adding technical specificity"
+      
+      // Check for lack of specificity
+      if (!text.includes('at least') && !text.includes('must') && !text.includes('should')) {
+        weaknessScore += 2
       }
-    }
-  }
+      
+      // Check for lack of measurements
+      if (!/\d/.test(text)) {
+        weaknessScore += 2
+      }
+      
+      // Check if too short (likely vague)
+      if (text.length < 30) {
+        weaknessScore += 3
+      }
+      
+      return {
+        ...c,
+        weaknessScore
+      }
+    })
+    .sort((a, b) => b.weaknessScore - a.weaknessScore)
+    .slice(0, 5) // Take top 5 weakest
   
-  // Default for other domains
   return {
     taskContext: {
-      domain: "General academic evaluation",
-      keyObjectives: ["Assess understanding", "Evaluate analysis", "Measure synthesis"],
-      specificSkillsAssessed: ["Research skills", "Critical thinking", "Communication"]
+      domain: "Literature analysis and character development",
+      keyObjectives: ["Analyze character transformation", "Evaluate narrative development", "Assess thematic understanding"],
+      specificSkillsAssessed: ["Literary analysis", "Character analysis", "Thematic interpretation"]
     },
-    improvements: sampleCriteria.map((c: any) => ({
+    improvements: weakCriteria.map((c: any) => ({
       originalId: c.id,
       original: c.finalText || c.text,
-      contextualIssues: ["Lacks domain specificity", "Missing measurable thresholds"],
-      improved: `${c.finalText || c.text} with specific examples and quantifiable metrics`,
+      weaknessScore: c.weaknessScore,
+      contextualIssues: [
+        c.weaknessScore >= 7 ? "Too vague and lacks specific requirements" : "Could be more specific",
+        c.weaknessScore >= 5 ? "Missing measurable thresholds" : "Needs clearer evaluation criteria"
+      ],
+      improved: `${c.finalText || c.text} with specific examples from at least 3 different books/chapters and includes measurable criteria`,
       specificEnhancements: [
         {
-          aspect: "Measurable outcomes",
-          domainRelevance: "Provides clear evaluation criteria",
-          concreteExample: "Include specific numbers, percentages, or concrete examples"
+          aspect: "Added specific requirements",
+          domainRelevance: "Makes the criterion objectively evaluable",
+          concreteExample: "Student must cite specific page numbers and quote relevant passages"
         }
       ]
-    })),
-    domainSpecificRecommendations: {
-      missingCriteria: ["Consider adding domain-specific evaluation criteria"],
-      topicSpecificGaps: ["More context-specific requirements needed"],
-      suggestedAdditions: [
-        {
-          criterion: "Addresses the specific context and requirements of the prompt",
-          rationale: "Ensures relevance to the actual task"
-        }
-      ]
-    },
-    contextualAlignment: {
-      promptCriteriaAlignment: "Criteria could be more tailored to the specific prompt",
-      domainCoverage: "Generic coverage - needs domain specialization",
-      improvementImpact: "+15 points with context-specific improvements"
-    }
+    }))
   }
 }
 
@@ -847,48 +788,31 @@ Respond in JSON format:
 async function generateImprovedCriteria(criteria: any[], originalPrompt: string) {
   logger.info({ criteriaCount: criteria.length }, 'Starting criteria improvement generation')
   
-  // Select a subset of criteria to improve (5-7 most problematic ones)
-  const criteriaToImprove = criteria.slice(0, 7).map((c: any) => ({
-    id: c.id,
-    text: c.finalText || c.text,
-    isPositive: c.isPositive
-  }))
-  
-  logger.info({ selectedCount: criteriaToImprove.length }, 'Selected criteria for improvement')
+  const prompt = `You are an expert at creating rubric criteria. Your task is to analyze ALL the criteria below and identify the WEAKEST ones that most need improvement.
 
-  const prompt = `You are an expert at creating rubric criteria. Your task is to provide SPECIFIC, CONTEXTUAL improvements to these criteria based on the actual evaluation prompt.
-
-CRITICAL: Your improvements must be SPECIFIC to this exact evaluation task, not generic!
+CRITICAL: You must analyze every criterion and select only those with clear issues for improvement!
 
 ORIGINAL EVALUATION PROMPT:
 "${originalPrompt}"
 
-CURRENT CRITERIA TO IMPROVE:
-${criteriaToImprove.map((c: any, i: number) => `${i + 1}. [${c.isPositive ? 'Positive' : 'Negative'}] "${c.text}"`).join('\n')}
+ALL CURRENT CRITERIA TO ANALYZE:
+${criteria.map((c: any, i: number) => `${i + 1}. [${c.isPositive ? 'Positive' : 'Negative'}] "${c.finalText || c.text}"`).join('\n')}
 
-First, understand:
-1. What specific topic/domain is being evaluated
-2. What the key evaluation goals are for THIS task
-3. What specific knowledge/skills are being assessed
+First, analyze each criterion for these common issues:
+1. VAGUENESS - Uses terms like "good", "adequate", "appropriate" without specific thresholds
+2. STACKING - Multiple unrelated aspects combined in one criterion
+3. MISSING CONTEXT - Doesn't reference specific concepts from the prompt's domain
+4. NO MEASURABILITY - Lacks clear, objective pass/fail conditions
+5. GENERIC - Could apply to any assignment, not specific to THIS task
 
-Then improve each criterion to be:
-1. ATOMIC - One specific aspect, relevant to THIS topic
-2. SELF-CONTAINED - Include specific thresholds/values relevant to THIS domain
-3. CONTEXTUAL - Use terminology and requirements specific to THIS subject
-4. MEASURABLE - Clear pass/fail conditions for THIS particular task
+Then select 3-5 of the WEAKEST criteria that have the clearest issues.
 
-EXAMPLE OF BAD (GENERIC) vs GOOD (SPECIFIC) improvements:
-BAD: "Mentions at least 3 sources" 
-GOOD: "Cites at least 3 peer-reviewed climate science journals published after 2020"
+For each weak criterion you select, provide:
+1. The specific issues that make it weak
+2. A concrete improved version with domain-specific details
+3. Clear explanation of what was enhanced
 
-BAD: "Provides analysis"
-GOOD: "Analyzes the carbon footprint implications using IPCC methodology"
-
-Your improvements must:
-- Reference specific concepts from the prompt's domain
-- Include concrete values/thresholds relevant to the topic
-- Use domain-specific terminology
-- Be clearly evaluable in the context of THIS assignment
+DO NOT improve criteria that are already well-written. Focus only on those with genuine issues.
 
 Respond in JSON format:
 {
@@ -901,7 +825,8 @@ Respond in JSON format:
     {
       "originalId": "criterion id",
       "original": "original text",
-      "contextualIssues": ["Why this is too generic for THIS task"],
+      "weaknessScore": 1-10 (10 being weakest),
+      "contextualIssues": ["Specific issues with this criterion"],
       "improved": "SPECIFIC improved version with domain-relevant details",
       "specificEnhancements": [
         {
@@ -911,22 +836,7 @@ Respond in JSON format:
         }
       ]
     }
-  ],
-  "domainSpecificRecommendations": {
-    "missingCriteria": ["SPECIFIC criteria missing for THIS topic (e.g., 'No criterion for statistical significance in research findings')"],
-    "topicSpecificGaps": ["Gaps specific to evaluating THIS subject matter"],
-    "suggestedAdditions": [
-      {
-        "criterion": "Specific new criterion text",
-        "rationale": "Why this is essential for THIS evaluation task"
-      }
-    ]
-  },
-  "contextualAlignment": {
-    "promptCriteriaAlignment": "How well criteria match THIS specific prompt",
-    "domainCoverage": "Coverage of key aspects of THIS topic",
-    "improvementImpact": "Expected improvement for evaluating THIS specific task"
-  }
+  ]
 }`
 
   try {
@@ -934,7 +844,7 @@ Respond in JSON format:
       model: getModelForTask('rubricGeneration'),
       max_tokens: TASK_CONFIGS.rubricGeneration.maxTokens,
       temperature: TASK_CONFIGS.rubricGeneration.temperature,
-      system: 'You are an expert in rubric design who provides SPECIFIC, CONTEXTUAL improvements based on the actual evaluation task. You understand that generic suggestions are useless - every improvement must be tailored to the specific domain and objectives of the prompt. Always respond with valid JSON.',
+      system: 'You are an expert in rubric design who analyzes criteria quality and provides targeted improvements for genuinely weak criteria. You understand that not all criteria need improvement - focus only on those with clear issues. Always respond with valid JSON.',
       messages: [
         {
           role: 'user',
@@ -956,6 +866,13 @@ Respond in JSON format:
     }
 
     const result = JSON.parse(jsonMatch[0])
+    
+    // Sort improvements by weakness score and take only the top ones
+    if (result.improvements && Array.isArray(result.improvements)) {
+      result.improvements.sort((a: any, b: any) => (b.weaknessScore || 0) - (a.weaknessScore || 0))
+      result.improvements = result.improvements.slice(0, 5) // Take top 5 weakest
+    }
+    
     return result
   } catch (error) {
     logger.error(error instanceof Error ? error.message : String(error), 'Error generating improved criteria')

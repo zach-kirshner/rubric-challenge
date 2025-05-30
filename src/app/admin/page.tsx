@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Sparkles, Lightbulb, Info } from 'lucide-react'
+import { ArrowLeft, Eye, TrendingUp, Edit3, Trash2, Plus, CheckCircle, XCircle, Shield, ChevronRight, Clock, Award, RefreshCw, FileText, Target, Download, BarChart3, Users, Activity, TrendingDown, Sparkles, Info } from 'lucide-react'
 import logger from '@/lib/logger'
 
 interface Submission {
@@ -116,6 +116,7 @@ interface Improvements {
     improvements: Array<{
       originalId: string
       original: string
+      weaknessScore?: number
       contextualIssues: string[]
       improved: string
       specificEnhancements: Array<{
@@ -124,19 +125,6 @@ interface Improvements {
         concreteExample: string
       }>
     }>
-    domainSpecificRecommendations: {
-      missingCriteria: string[]
-      topicSpecificGaps: string[]
-      suggestedAdditions: Array<{
-        criterion: string
-        rationale: string
-      }>
-    }
-    contextualAlignment: {
-      promptCriteriaAlignment: string
-      domainCoverage: string
-      improvementImpact: string
-    }
   }
 }
 
@@ -155,9 +143,11 @@ const ImprovementTooltip = ({
   const handleMouseEnter = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
     const tooltipWidth = 500 // increased for more content
+    const tooltipHeight = 400 // estimated max height
     
-    // Position tooltip to avoid going off-screen
+    // Position tooltip to avoid going off-screen horizontally
     let x = rect.left + rect.width / 2
     if (x + tooltipWidth / 2 > viewportWidth) {
       x = viewportWidth - tooltipWidth / 2 - 20
@@ -165,9 +155,19 @@ const ImprovementTooltip = ({
       x = tooltipWidth / 2 + 20
     }
     
+    // Position tooltip below if there's not enough space above
+    let y = rect.top - 10
+    const spaceAbove = rect.top
+    const spaceBelow = viewportHeight - rect.bottom
+    
+    // If not enough space above and more space below, position below the element
+    if (spaceAbove < tooltipHeight && spaceBelow > spaceAbove) {
+      y = rect.bottom + 10
+    }
+    
     setPosition({
       x,
-      y: rect.top - 10
+      y
     })
     
     // Add delay before showing
@@ -206,7 +206,7 @@ const ImprovementTooltip = ({
           style={{ 
             left: position.x,
             top: position.y,
-            transform: 'translate(-50%, -100%)',
+            transform: position.y < 500 ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
             backgroundColor: 'var(--color-background)',
             border: '1px solid var(--color-border)',
             boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1)'
@@ -303,6 +303,18 @@ const ImprovementTooltip = ({
             {/* Criteria Improvement Display */}
             {isCriteriaImprovement && (
               <>
+                {/* Weakness Score */}
+                {improvement.weaknessScore && (
+                  <div className="mb-2">
+                    <p className="text-xs font-medium" style={{ color: 'var(--color-muted-foreground)' }}>
+                      Weakness score: 
+                      <span className="ml-1 font-bold" style={{ color: improvement.weaknessScore >= 7 ? '#EF4444' : improvement.weaknessScore >= 5 ? '#F59E0B' : '#3B82F6' }}>
+                        {improvement.weaknessScore}/10
+                      </span>
+                    </p>
+                  </div>
+                )}
+                
                 {/* Improved Criterion */}
                 <div>
                   <p className="text-xs font-medium mb-1" style={{ color: 'var(--color-muted-foreground)' }}>
@@ -1139,120 +1151,6 @@ export default function AdminPage() {
               })}
             </div>
           </div>
-
-          {/* Domain-Specific Recommendations */}
-          {improvements?.criteriaImprovements && (
-            <div className="card mt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
-                <h3 className="text-lg font-semibold">Domain-Specific Recommendations</h3>
-              </div>
-              
-              <div className="space-y-4">
-                {/* Task Context */}
-                {improvements.criteriaImprovements.taskContext && (
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-muted)' }}>
-                    <p className="text-sm font-medium mb-2">Task Context</p>
-                    <div className="space-y-1 text-xs">
-                      <div>
-                        <span style={{ color: 'var(--color-muted-foreground)' }}>Domain: </span>
-                        <span className="font-medium">{improvements.criteriaImprovements.taskContext.domain}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-muted-foreground)' }}>Key Objectives: </span>
-                        <span>{improvements.criteriaImprovements.taskContext.keyObjectives.join(', ')}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--color-muted-foreground)' }}>Skills Assessed: </span>
-                        <span>{improvements.criteriaImprovements.taskContext.specificSkillsAssessed.join(', ')}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Missing Criteria & Gaps */}
-                {improvements.criteriaImprovements.domainSpecificRecommendations && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Missing Criteria */}
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
-                      <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <XCircle className="w-4 h-4" style={{ color: '#EF4444' }} />
-                        Missing Criteria
-                      </p>
-                      <ul className="space-y-1">
-                        {improvements.criteriaImprovements.domainSpecificRecommendations.missingCriteria.map((missing, idx) => (
-                          <li key={idx} className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            • {missing}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Topic-Specific Gaps */}
-                    <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)' }}>
-                      <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <Info className="w-4 h-4" style={{ color: '#F59E0B' }} />
-                        Topic-Specific Gaps
-                      </p>
-                      <ul className="space-y-1">
-                        {improvements.criteriaImprovements.domainSpecificRecommendations.topicSpecificGaps.map((gap, idx) => (
-                          <li key={idx} className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            • {gap}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggested Additions */}
-                {improvements.criteriaImprovements.domainSpecificRecommendations?.suggestedAdditions?.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <Plus className="w-4 h-4" style={{ color: '#22C55E' }} />
-                      Suggested New Criteria
-                    </p>
-                    <div className="space-y-2">
-                      {improvements.criteriaImprovements.domainSpecificRecommendations.suggestedAdditions.map((addition, idx) => (
-                        <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-muted)' }}>
-                          <p className="text-sm font-medium mb-1">{addition.criterion}</p>
-                          <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
-                            {addition.rationale}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Contextual Alignment */}
-                {improvements.criteriaImprovements.contextualAlignment && (
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}>
-                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <Target className="w-4 h-4" style={{ color: '#3B82F6' }} />
-                      Contextual Alignment Assessment
-                    </p>
-                    <div className="space-y-2 text-xs">
-                      <div>
-                        <span className="font-medium">Prompt-Criteria Alignment: </span>
-                        <span>{improvements.criteriaImprovements.contextualAlignment.promptCriteriaAlignment}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Domain Coverage: </span>
-                        <span>{improvements.criteriaImprovements.contextualAlignment.domainCoverage}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Expected Impact: </span>
-                        <span className="font-semibold" style={{ color: '#22C55E' }}>
-                          {improvements.criteriaImprovements.contextualAlignment.improvementImpact}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </main>
       </div>
     )
