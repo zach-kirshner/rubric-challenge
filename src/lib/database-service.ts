@@ -44,74 +44,80 @@ const withCleanConnection = async <T>(operation: () => Promise<T>): Promise<T> =
 }
 
 class DatabaseService {
+  private async _createUser(email: string, fullName: string) {
+    try {
+      const user = await prisma.user.upsert({
+        where: { email },
+        update: { fullName },
+        create: { email, fullName }
+      })
+      return user
+    } catch (error) {
+      logger.error('Error creating/updating user', error instanceof Error ? error.message : String(error))
+      throw error
+    }
+  }
+
   async createUser(email: string, fullName: string) {
     return withCleanConnection(async () => {
-      try {
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: { fullName },
-          create: { email, fullName }
-        })
-        return user
-      } catch (error) {
-        logger.error('Error creating/updating user', error instanceof Error ? error.message : String(error))
-        throw error
-      }
+      return this._createUser(email, fullName)
     })
   }
 
   async addSubmission(submissionData: any) {
-    try {
-      // First ensure the user exists
-      const user = await this.createUser(submissionData.email, submissionData.fullName)
+    return withCleanConnection(async () => {
+      try {
+        // First ensure the user exists - use internal method to avoid nested connection
+        const user = await this._createUser(submissionData.email, submissionData.fullName)
 
-      // Create the submission
-      const submission = await prisma.submission.create({
-        data: {
-          id: submissionData.id,
-          userId: user.id,
-          prompt: submissionData.prompt,
-          status: submissionData.status,
-          submittedAt: submissionData.submittedAt,
-          criteria: {
-            create: submissionData.criteria.map((criterion: any) => ({
-              id: criterion.id,
-              originalId: criterion.originalId,
-              text: criterion.text,
-              isPositive: criterion.isPositive,
-              source: criterion.source,
-              status: criterion.status,
-              finalText: criterion.finalText,
-              order: criterion.order
-            }))
+        // Create the submission
+        const submission = await prisma.submission.create({
+          data: {
+            id: submissionData.id,
+            userId: user.id,
+            prompt: submissionData.prompt,
+            status: submissionData.status,
+            submittedAt: submissionData.submittedAt,
+            criteria: {
+              create: submissionData.criteria.map((criterion: any) => ({
+                id: criterion.id,
+                originalId: criterion.originalId,
+                text: criterion.text,
+                isPositive: criterion.isPositive,
+                source: criterion.source,
+                status: criterion.status,
+                finalText: criterion.finalText,
+                order: criterion.order
+              }))
+            },
+            criteriaActions: {
+              create: submissionData.criteriaActions.map((action: any) => ({
+                id: action.id,
+                criterionId: action.criterionId,
+                actionType: action.actionType,
+                previousText: action.previousText,
+                newText: action.newText,
+                previousOrder: action.previousOrder,
+                newOrder: action.newOrder,
+                justification: action.justification,
+                timestamp: action.timestamp
+              }))
+            }
           },
-          criteriaActions: {
-            create: submissionData.criteriaActions.map((action: any) => ({
-              id: action.id,
-              criterionId: action.criterionId,
-              actionType: action.actionType,
-              previousText: action.previousText,
-              newText: action.newText,
-              previousOrder: action.previousOrder,
-              newOrder: action.newOrder,
-              justification: action.justification,
-              timestamp: action.timestamp
-            }))
+          include: {
+            user: true,
+            criteria: true,
+            criteriaActions: true
           }
-        },
-        include: {
-          user: true,
-          criteria: true,
-          criteriaActions: true
-        }
-      })
+        })
 
-      logger.info(`Submission ${submission.id} saved to database for user ${user.email}`)
-      return this.formatSubmission(submission)
-    } catch (error) {
-      logger.error('Error saving submission to database', error instanceof Error ? error.message : String(error))
-      throw error
-    }
+        logger.info(`Submission ${submission.id} saved to database for user ${user.email}`)
+        return this.formatSubmission(submission)
+      } catch (error) {
+        logger.error('Error saving submission to database', error instanceof Error ? error.message : String(error))
+        throw error
+      }
+    })
   }
 
   async getSubmission(id: string): Promise<DatabaseSubmission | null> {
@@ -158,26 +164,28 @@ class DatabaseService {
   }
 
   async updateSubmission(id: string, updates: any) {
-    try {
-      const submission = await prisma.submission.update({
-        where: { id },
-        data: {
-          gradingResult: updates.gradingResult,
-          gradedAt: updates.gradedAt || new Date()
-        },
-        include: {
-          user: true,
-          criteria: true,
-          criteriaActions: true
-        }
-      })
+    return withCleanConnection(async () => {
+      try {
+        const submission = await prisma.submission.update({
+          where: { id },
+          data: {
+            gradingResult: updates.gradingResult,
+            gradedAt: updates.gradedAt || new Date()
+          },
+          include: {
+            user: true,
+            criteria: true,
+            criteriaActions: true
+          }
+        })
 
-      logger.info(`Submission ${id} updated in database`)
-      return this.formatSubmission(submission)
-    } catch (error) {
-      logger.error('Error updating submission in database', error instanceof Error ? error.message : String(error))
-      throw error
-    }
+        logger.info(`Submission ${id} updated in database`)
+        return this.formatSubmission(submission)
+      } catch (error) {
+        logger.error('Error updating submission in database', error instanceof Error ? error.message : String(error))
+        throw error
+      }
+    })
   }
 
   private formatSubmission(submission: any): DatabaseSubmission {
