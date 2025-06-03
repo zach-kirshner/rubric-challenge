@@ -399,6 +399,15 @@ export default function PromptPage() {
                           too hard won't effectively differentiate performance.
                         </p>
                       </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Be Realistic</h4>
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Write prompts that reflect real-world professional tasks—something you'd actually assign in your field. 
+                          Include realistic background (goals, data, client needs) like you would when briefing a colleague. 
+                          Avoid artificial constraints that don't serve a practical purpose or just add fake complexity.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
