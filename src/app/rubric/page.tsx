@@ -671,7 +671,7 @@ export default function RubricPage() {
             onClick={() => setShowHelpModal(false)}
           />
           
-          <div className="relative w-full max-w-2xl max-h-[85vh] card card-elevated animate-slide-up flex flex-col overflow-hidden">
+          <div className="relative w-full max-w-2xl h-[85vh] card card-elevated animate-slide-up flex flex-col">
             {/* Modal Header - Fixed */}
             <div className="flex items-center justify-between p-6 border-b flex-shrink-0" style={{ borderColor: 'var(--color-card-border)' }}>
               <div className="flex items-center gap-3">
@@ -689,108 +689,110 @@ export default function RubricPage() {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Goal and Purpose */}
-              <div className="card" style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Target className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
-                  Your Goal
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
-                  The AI has generated a set of evaluation criteria based on your task prompt. Your job is to review 
-                  and refine these criteria to ensure they accurately capture what makes a good response to your task. 
-                  Think critically about whether the criteria are comprehensive, specific, and measurable.
-                </p>
-                <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
-                  <strong>Remember:</strong> These criteria will be used to evaluate AI responses to your task. 
-                  The better your rubric, the more effectively we can assess AI performance.
-                </p>
-              </div>
+            <div className="flex-1 overflow-y-auto p-6" style={{ minHeight: 0 }}>
+              <div className="space-y-6">
+                {/* Goal and Purpose */}
+                <div className="card" style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Target className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                    Your Goal
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
+                    The AI has generated a set of evaluation criteria based on your task prompt. Your job is to review 
+                    and refine these criteria to ensure they accurately capture what makes a good response to your task. 
+                    Think critically about whether the criteria are comprehensive, specific, and measurable.
+                  </p>
+                  <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <strong>Remember:</strong> These criteria will be used to evaluate AI responses to your task. 
+                    The better your rubric, the more effectively we can assess AI performance.
+                  </p>
+                </div>
 
-              {/* What you can do */}
-              <div>
-                <h3 className="font-semibold mb-3">What You Can Do</h3>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3">
-                    <Edit3 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
-                    <div>
-                      <span className="font-medium">Edit</span> - Click the edit icon to refine the wording of any criterion
+                {/* What you can do */}
+                <div>
+                  <h3 className="font-semibold mb-3">What You Can Do</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-3">
+                      <Edit3 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                      <div>
+                        <span className="font-medium">Edit</span> - Click the edit icon to refine the wording of any criterion
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Trash2 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
-                    <div>
-                      <span className="font-medium">Delete</span> - Remove criteria that aren't essential or are redundant
+                    <div className="flex items-start gap-3">
+                      <Trash2 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                      <div>
+                        <span className="font-medium">Delete</span> - Remove criteria that aren't essential or are redundant
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <GripVertical className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
-                    <div>
-                      <span className="font-medium">Reorder</span> - Drag criteria to organize them by importance or logical flow
+                    <div className="flex items-start gap-3">
+                      <GripVertical className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                      <div>
+                        <span className="font-medium">Reorder</span> - Drag criteria to organize them by importance or logical flow
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Plus className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
-                    <div>
-                      <span className="font-medium">Add New</span> - Create additional criteria the AI might have missed
+                    <div className="flex items-start gap-3">
+                      <Plus className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                      <div>
+                        <span className="font-medium">Add New</span> - Create additional criteria the AI might have missed
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Best Practices */}
-              <div>
-                <h3 className="font-semibold mb-3">Best Practices</h3>
-                <ul className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                    <span>Each criterion should be <strong>atomic</strong> - testing only one specific thing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                    <span>Make criteria <strong>specific</strong> and objectively verifiable (true/false)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                    <span>Include both <strong>positive</strong> (+) and <strong>negative</strong> (-) criteria</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                    <span>Aim for <strong>10-20 criteria</strong> that comprehensively evaluate the response</span>
-                  </li>
-                </ul>
-              </div>
+                {/* Best Practices */}
+                <div>
+                  <h3 className="font-semibold mb-3">Best Practices</h3>
+                  <ul className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                      <span>Each criterion should be <strong>atomic</strong> - testing only one specific thing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                      <span>Make criteria <strong>specific</strong> and objectively verifiable (true/false)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                      <span>Include both <strong>positive</strong> (+) and <strong>negative</strong> (-) criteria</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                      <span>Aim for <strong>10-20 criteria</strong> that comprehensively evaluate the response</span>
+                    </li>
+                  </ul>
+                </div>
 
-              {/* Keyboard Shortcuts */}
-              <div>
-                <h3 className="font-semibold mb-3">Keyboard Shortcuts</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <kbd className="kbd">Ctrl+S</kbd>
-                    <span style={{ color: 'var(--color-muted-foreground)' }}>Submit rubric</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="kbd">Ctrl+A</kbd>
-                    <span style={{ color: 'var(--color-muted-foreground)' }}>Add new criterion</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="kbd">?</kbd>
-                    <span style={{ color: 'var(--color-muted-foreground)' }}>Show this help</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="kbd">Esc</kbd>
-                    <span style={{ color: 'var(--color-muted-foreground)' }}>Close modals</span>
+                {/* Keyboard Shortcuts */}
+                <div>
+                  <h3 className="font-semibold mb-3">Keyboard Shortcuts</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <kbd className="kbd">Ctrl+S</kbd>
+                      <span style={{ color: 'var(--color-muted-foreground)' }}>Submit rubric</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <kbd className="kbd">Ctrl+A</kbd>
+                      <span style={{ color: 'var(--color-muted-foreground)' }}>Add new criterion</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <kbd className="kbd">?</kbd>
+                      <span style={{ color: 'var(--color-muted-foreground)' }}>Show this help</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <kbd className="kbd">Esc</kbd>
+                      <span style={{ color: 'var(--color-muted-foreground)' }}>Close modals</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Important Note */}
-              <div className="p-4 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <div className="flex items-start gap-2">
-                  <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#3B82F6' }} />
-                  <div className="text-sm">
-                    <strong>Remember:</strong> Each change requires a justification. This helps us understand your reasoning 
-                    and improve our AI's ability to generate better criteria in the future.
+                {/* Important Note */}
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#3B82F6' }} />
+                    <div className="text-sm">
+                      <strong>Remember:</strong> Each change requires a justification. This helps us understand your reasoning 
+                      and improve our AI's ability to generate better criteria in the future.
+                    </div>
                   </div>
                 </div>
               </div>
