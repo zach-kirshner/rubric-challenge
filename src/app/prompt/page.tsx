@@ -464,6 +464,58 @@ export default function PromptPage() {
                           </li>
                         </ul>
                       </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--gradient-mid)' }}>Understanding Positive vs Negative Criteria</h4>
+                        <div className="space-y-3">
+                          <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                            Criteria can be either positive (rewarding good content) or negative (flagging problems):
+                          </p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div className="p-3 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                              <p className="font-medium mb-1" style={{ color: '#F59E0B' }}>Core (+6 to +10)</p>
+                              <p style={{ color: 'var(--color-muted-foreground)' }}>
+                                Essential requirements. Without these, the response fails.
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-lg" style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                              <p className="font-medium mb-1" style={{ color: '#22C55E' }}>Enhancement (+1 to +5)</p>
+                              <p style={{ color: 'var(--color-muted-foreground)' }}>
+                                Not required, but improve the response if present.
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                              <p className="font-medium mb-1" style={{ color: '#EF4444' }}>Negative (-1 to -10)</p>
+                              <p style={{ color: 'var(--color-muted-foreground)' }}>
+                                Flag harmful, irrelevant, or incorrect content.
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="p-3 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium">Warning: Avoid Double Negatives</p>
+                                <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                                  A negative criterion must flag something <span className="font-medium">present</span> in the response, not something missing.
+                                </p>
+                                <div className="space-y-2 mt-2">
+                                  <div>
+                                    <p className="text-xs">❌ <span className="font-medium">Bad:</span> "The response must not mention that plastic is good for the environment"</p>
+                                    <p className="text-xs opacity-75 ml-4">→ Confusing: Are we penalizing for mentioning it, or for not avoiding it?</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs">✅ <span className="font-medium">Good:</span> "The response mentions that plastic is good for the environment"</p>
+                                    <p className="text-xs opacity-75 ml-4">→ Clear: If the response claims this, deduct points.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
