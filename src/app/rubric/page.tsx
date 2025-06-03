@@ -800,13 +800,13 @@ export default function RubricPage() {
                             A negative criterion must flag something <span className="font-medium">present</span> in the response, not something missing.
                           </p>
                           <div className="space-y-2 mt-2 text-xs">
-                            <div>
-                              <p>❌ <span className="font-medium">Bad:</span> "The response must not mention that plastic is good for the environment"</p>
-                              <p className="opacity-75 ml-4">→ This creates confusion about what we're penalizing</p>
+                            <div className="p-2 rounded" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                              <p><span className="font-medium text-red-600">Bad example:</span> "The response must not mention that plastic is good for the environment"</p>
+                              <p className="opacity-75 mt-1">This creates confusion about what we're penalizing</p>
                             </div>
-                            <div>
-                              <p>✅ <span className="font-medium">Good:</span> "The response mentions that plastic is good for the environment"</p>
-                              <p className="opacity-75 ml-4">→ This is clear: if present, it's wrong and points are deducted</p>
+                            <div className="p-2 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                              <p><span className="font-medium text-green-600">Good example:</span> "The response mentions that plastic is good for the environment"</p>
+                              <p className="opacity-75 mt-1">This is clear: if present, it's wrong and points are deducted</p>
                             </div>
                           </div>
                         </div>

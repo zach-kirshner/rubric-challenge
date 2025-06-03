@@ -423,10 +423,16 @@ export default function PromptPage() {
                             <span className="text-xs mt-1">•</span>
                             <div>
                               <span className="font-medium">Atomic:</span> Each criterion evaluates exactly one distinct aspect
-                              <div className="mt-1 text-xs opacity-80">
-                                ❌ "Mentions the capital is Ottawa and has 10 provinces"<br/>
-                                ✅ "Mentions the capital of Canada is Ottawa"<br/>
-                                ✅ "States that Canada has 10 provinces"
+                              <div className="mt-1 text-xs space-y-1">
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                                  <span className="font-medium text-red-600">Poor:</span> "Mentions the capital is Ottawa and has 10 provinces"
+                                </div>
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                                  <span className="font-medium text-green-600">Better:</span> "Mentions the capital of Canada is Ottawa"
+                                </div>
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                                  <span className="font-medium text-green-600">Better:</span> "States that Canada has 10 provinces"
+                                </div>
                               </div>
                             </div>
                           </li>
@@ -434,9 +440,13 @@ export default function PromptPage() {
                             <span className="text-xs mt-1">•</span>
                             <div>
                               <span className="font-medium">Specific:</span> Clear, binary (true/false) statements that are objective
-                              <div className="mt-1 text-xs opacity-80">
-                                ❌ "The response is well-written"<br/>
-                                ✅ "The response includes at least 3 specific examples"
+                              <div className="mt-1 text-xs space-y-1">
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                                  <span className="font-medium text-red-600">Poor:</span> "The response is well-written"
+                                </div>
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                                  <span className="font-medium text-green-600">Better:</span> "The response includes at least 3 specific examples"
+                                </div>
                               </div>
                             </div>
                           </li>
@@ -444,9 +454,13 @@ export default function PromptPage() {
                             <span className="text-xs mt-1">•</span>
                             <div>
                               <span className="font-medium">Self-contained:</span> Contains all information needed to evaluate
-                              <div className="mt-1 text-xs opacity-80">
-                                ❌ "Mentions the largest planet"<br/>
-                                ✅ "Identifies Jupiter as the largest planet in our solar system"
+                              <div className="mt-1 text-xs space-y-1">
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                                  <span className="font-medium text-red-600">Poor:</span> "Mentions the largest planet"
+                                </div>
+                                <div className="p-1.5 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                                  <span className="font-medium text-green-600">Better:</span> "Identifies Jupiter as the largest planet in our solar system"
+                                </div>
                               </div>
                             </div>
                           </li>
@@ -502,13 +516,13 @@ export default function PromptPage() {
                                   A negative criterion must flag something <span className="font-medium">present</span> in the response, not something missing.
                                 </p>
                                 <div className="space-y-2 mt-2">
-                                  <div>
-                                    <p className="text-xs">❌ <span className="font-medium">Bad:</span> "The response must not mention that plastic is good for the environment"</p>
-                                    <p className="text-xs opacity-75 ml-4">→ This creates confusion about what we're penalizing</p>
+                                  <div className="p-2 rounded" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                                    <p className="text-xs"><span className="font-medium text-red-600">Bad example:</span> "The response must not mention that plastic is good for the environment"</p>
+                                    <p className="text-xs opacity-75 mt-1">This creates confusion about what we're penalizing</p>
                                   </div>
-                                  <div>
-                                    <p className="text-xs">✅ <span className="font-medium">Good:</span> "The response mentions that plastic is good for the environment"</p>
-                                    <p className="text-xs opacity-75 ml-4">→ This is clear: if present, it's wrong and points are deducted</p>
+                                  <div className="p-2 rounded" style={{ background: 'rgba(34, 197, 94, 0.05)' }}>
+                                    <p className="text-xs"><span className="font-medium text-green-600">Good example:</span> "The response mentions that plastic is good for the environment"</p>
+                                    <p className="text-xs opacity-75 mt-1">This is clear: if present, it's wrong and points are deducted</p>
                                   </div>
                                 </div>
                               </div>
