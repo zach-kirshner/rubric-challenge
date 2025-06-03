@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Plus, Save, CheckCircle2, XCircle, Edit3, Trash2, GripVertical, ArrowLeft, ChevronDown, ChevronUp, FileText } from 'lucide-react'
+import { Plus, Save, CheckCircle2, XCircle, Edit3, Trash2, GripVertical, ArrowLeft, ChevronDown, ChevronUp, FileText, Target, BookOpen, Lightbulb, AlertCircle, HelpCircle, X, Info, Sparkles } from 'lucide-react'
 import SortableItem from '@/components/SortableItem'
 import JustificationModal from '@/components/JustificationModal'
 import { RubricItem, Action } from '@/types'
@@ -27,6 +27,8 @@ export default function RubricPage() {
   const [newJustification, setNewJustification] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
+  const [showHelpModal, setShowHelpModal] = useState(false)
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false)
   const addFormRef = useRef<HTMLDivElement>(null)
 
   const sensors = useSensors(
@@ -52,7 +54,25 @@ export default function RubricPage() {
     setFullName(userName)
     setRubricItems(savedItems)
     setOriginalItems(savedItems)
+
+    // Check if it's user's first visit to this page
+    const hasSeenHelp = localStorage.getItem('hasSeenRubricHelp')
+    if (!hasSeenHelp) {
+      setShowHelpModal(true)
+      localStorage.setItem('hasSeenRubricHelp', 'true')
+    }
   }, [router])
+
+  // Handle scroll to collapse header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      setIsHeaderCollapsed(scrollTop > 150)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -69,11 +89,21 @@ export default function RubricPage() {
         e.preventDefault()
         setShowAddForm(true)
       }
+      // ? to show help
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && e.target === document.body) {
+        e.preventDefault()
+        setShowHelpModal(true)
+      }
+      // Escape to close help modal
+      if (e.key === 'Escape' && showHelpModal) {
+        e.preventDefault()
+        setShowHelpModal(false)
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [rubricItems.length, isSubmitting])
+  }, [rubricItems.length, isSubmitting, showHelpModal])
 
   // Scroll to add form when it's shown
   useEffect(() => {
@@ -253,10 +283,14 @@ export default function RubricPage() {
         />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      {/* Sticky Header with Collapsible Prompt */}
+      <header 
+        className={`sticky top-0 z-40 glass transition-all duration-300 ${isHeaderCollapsed ? 'shadow-lg' : ''}`} 
+        style={{ borderBottom: '1px solid var(--color-border)' }}
+      >
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Main header row */}
+          <div className={`flex items-center justify-between transition-all duration-300 ${isHeaderCollapsed ? 'py-3' : 'py-4'}`}>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/prompt')}
@@ -265,94 +299,117 @@ export default function RubricPage() {
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
-              <h1 className="text-2xl font-bold">
-                Review Criteria
-              </h1>
-              <div className="flex items-center gap-2">
-                <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                  {rubricItems.length} criteria
-                </span>
+              <div className="flex items-center gap-3">
+                <h1 className={`font-bold transition-all duration-300 ${isHeaderCollapsed ? 'text-xl' : 'text-2xl'}`}>
+                  Review Criteria
+                </h1>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                    {rubricItems.length} criteria
+                  </span>
+                  {stats.added > 0 || stats.edited > 0 || stats.deleted > 0 ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--gradient-mid)' }}>
+                      {stats.added + stats.edited + stats.deleted} changes
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
             
-            {/* Stats */}
-            <div className="flex items-center gap-3">
-              {stats.added > 0 && (
-                <div className="chip chip-added">
-                  <Plus className="w-3 h-3" />
-                  {stats.added} added
-                </div>
+            {/* Right side actions */}
+            <div className="flex items-center gap-2">
+              {/* Prompt toggle for collapsed state */}
+              {isHeaderCollapsed && (
+                <button
+                  onClick={() => setShowPrompt(!showPrompt)}
+                  className="btn-secondary text-sm"
+                  title="View task prompt"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Task Prompt</span>
+                </button>
               )}
-              {stats.edited > 0 && (
-                <div className="chip chip-edited">
-                  <Edit3 className="w-3 h-3" />
-                  {stats.edited} edited
+              
+              {/* Help button */}
+              <button
+                onClick={() => setShowHelpModal(true)}
+                className="icon-button"
+                title="Help (press ? for shortcuts)"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Expandable prompt section */}
+          {(!isHeaderCollapsed || showPrompt) && (
+            <div className={`transition-all duration-300 overflow-hidden ${isHeaderCollapsed && showPrompt ? 'py-3' : 'pb-4'}`}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 p-1.5 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                  <FileText className="w-4 h-4" style={{ color: '#3B82F6' }} />
                 </div>
-              )}
-              {stats.deleted > 0 && (
-                <div className="chip chip-removed">
-                  <Trash2 className="w-3 h-3" />
-                  {stats.deleted} deleted
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-medium">Task Prompt</h3>
+                    <span className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                      {prompt.split(' ').length} words
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed line-clamp-2" style={{ color: 'var(--color-muted-foreground)' }}>
+                    {prompt}
+                  </p>
+                  {prompt.split(' ').length > 30 && !showPrompt && (
+                    <button
+                      onClick={() => setShowPrompt(true)}
+                      className="text-xs mt-1 hover:underline"
+                      style={{ color: 'var(--gradient-mid)' }}
+                    >
+                      Show full prompt
+                    </button>
+                  )}
+                </div>
+                {showPrompt && (
+                  <button
+                    onClick={() => setShowPrompt(false)}
+                    className="icon-button icon-button-sm"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Full prompt when expanded */}
+              {showPrompt && (
+                <div className="mt-3 p-3 rounded-lg animate-slide-down" style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {prompt}
+                  </p>
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </header>
 
       {/* Main content */}
       <main className="relative z-10 max-w-4xl mx-auto px-6 py-8">
-        {/* Instructions */}
-        <div className="card glass mb-6 animate-in">
-          <div className="flex items-start gap-4">
-            <div className="p-2 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
-              <Edit3 className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold mb-1">Review and refine criteria</h3>
-              <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                Edit, delete, reorder, or add new criteria. Each change requires a justification.
-              </p>
-              <p className="text-xs mt-2" style={{ color: 'var(--color-muted-foreground)' }}>
-                Shortcuts: <kbd className="kbd">Ctrl+S</kbd> to submit • <kbd className="kbd">Ctrl+A</kbd> to add new • <kbd className="kbd">Esc</kbd> to close modals
-              </p>
-            </div>
+        {/* Compact welcome message */}
+        <div className="mb-6 animate-in">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+            <h2 className="text-lg font-semibold">Refine Your Evaluation Criteria</h2>
           </div>
-        </div>
-
-        {/* Prompt Reference */}
-        <div className="card glass mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
-          <button
-            onClick={() => setShowPrompt(!showPrompt)}
-            className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-black/5 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
-                <FileText className="w-4 h-4" style={{ color: '#3B82F6' }} />
-              </div>
-              <span className="font-medium">Reference Original Prompt</span>
-              <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--color-muted)', color: 'var(--color-muted-foreground)' }}>
-                {prompt.length} characters
-              </span>
-            </div>
-            {showPrompt ? (
-              <ChevronUp className="w-4 h-4" style={{ color: 'var(--color-muted-foreground)' }} />
-            ) : (
-              <ChevronDown className="w-4 h-4" style={{ color: 'var(--color-muted-foreground)' }} />
-            )}
-          </button>
-          
-          {showPrompt && (
-            <div className="mt-4 pt-4 border-t animate-in" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="prose prose-sm max-w-none">
-                <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-muted)' }}>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {prompt}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+            Review and improve the AI-generated criteria. Each change requires a brief justification.
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="ml-1 inline-flex items-center gap-1 hover:underline"
+              style={{ color: 'var(--gradient-mid)' }}
+            >
+              Learn more
+              <Info className="w-3 h-3" />
+            </button>
+          </p>
         </div>
 
         {/* Rubric items */}
@@ -604,6 +661,126 @@ export default function RubricPage() {
           </div>
         </div>
       </div>
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0" 
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={() => setShowHelpModal(false)}
+          />
+          
+          <div className="relative w-full max-w-2xl max-h-[80vh] overflow-y-auto card card-elevated animate-slide-up">
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-0" style={{ background: 'var(--color-card-background)' }}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+                  <HelpCircle className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                </div>
+                <h2 className="text-xl font-semibold">How to Review Criteria</h2>
+              </div>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="icon-button"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* What you can do */}
+              <div>
+                <h3 className="font-semibold mb-3">What You Can Do</h3>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3">
+                    <Edit3 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                    <div>
+                      <span className="font-medium">Edit</span> - Click the edit icon to refine the wording of any criterion
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Trash2 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                    <div>
+                      <span className="font-medium">Delete</span> - Remove criteria that aren't essential or are redundant
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <GripVertical className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                    <div>
+                      <span className="font-medium">Reorder</span> - Drag criteria to organize them by importance or logical flow
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Plus className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--gradient-mid)' }} />
+                    <div>
+                      <span className="font-medium">Add New</span> - Create additional criteria the AI might have missed
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Best Practices */}
+              <div>
+                <h3 className="font-semibold mb-3">Best Practices</h3>
+                <ul className="space-y-2 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                    <span>Each criterion should be <strong>atomic</strong> - testing only one specific thing</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                    <span>Make criteria <strong>specific</strong> and objectively verifiable (true/false)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                    <span>Include both <strong>positive</strong> (+) and <strong>negative</strong> (-) criteria</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
+                    <span>Aim for <strong>10-20 criteria</strong> that comprehensively evaluate the response</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Keyboard Shortcuts */}
+              <div>
+                <h3 className="font-semibold mb-3">Keyboard Shortcuts</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <kbd className="kbd">Ctrl+S</kbd>
+                    <span style={{ color: 'var(--color-muted-foreground)' }}>Submit rubric</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <kbd className="kbd">Ctrl+A</kbd>
+                    <span style={{ color: 'var(--color-muted-foreground)' }}>Add new criterion</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <kbd className="kbd">?</kbd>
+                    <span style={{ color: 'var(--color-muted-foreground)' }}>Show this help</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <kbd className="kbd">Esc</kbd>
+                    <span style={{ color: 'var(--color-muted-foreground)' }}>Close modals</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Important Note */}
+              <div className="p-4 rounded-lg" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <div className="flex items-start gap-2">
+                  <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#3B82F6' }} />
+                  <div className="text-sm">
+                    <strong>Remember:</strong> Each change requires a justification. This helps us understand your reasoning 
+                    and improve our AI's ability to generate better criteria in the future.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Justification Modal */}
       <JustificationModal
