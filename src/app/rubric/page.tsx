@@ -767,35 +767,26 @@ export default function RubricPage() {
                   <h3 className="font-semibold mb-3">Understanding Criteria Types</h3>
                   <div className="space-y-3">
                     <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-                      Criteria have different weights based on their importance:
+                      Your rubric can include both positive and negative criteria:
                     </p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                      <div className="p-3 rounded-lg" style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold" style={{ color: '#F59E0B' }}>+6 to +10</span>
-                        </div>
-                        <p className="font-medium mb-1" style={{ color: '#F59E0B' }}>Core</p>
-                        <p style={{ color: 'var(--color-muted-foreground)' }}>
-                          Essential to completing the task. Without them, the response fails.
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="p-3 rounded-lg" style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold" style={{ color: '#22C55E' }}>+1 to +5</span>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-green-500 text-lg">✓</span>
+                          <p className="font-medium" style={{ color: '#22C55E' }}>Positive Criteria</p>
                         </div>
-                        <p className="font-medium mb-1" style={{ color: '#22C55E' }}>Enhancement</p>
-                        <p style={{ color: 'var(--color-muted-foreground)' }}>
-                          Not required, but improve the response if present.
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Check for desired content, correct information, and good practices. Most of your criteria should be positive.
                         </p>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold" style={{ color: '#EF4444' }}>-1 to -10</span>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-red-500 text-lg">✗</span>
+                          <p className="font-medium" style={{ color: '#EF4444' }}>Negative Criteria</p>
                         </div>
-                        <p className="font-medium mb-1" style={{ color: '#EF4444' }}>Negative</p>
-                        <p style={{ color: 'var(--color-muted-foreground)' }}>
-                          Flag harmful, irrelevant, or incorrect content.
+                        <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                          Flag specific errors, harmful content, or incorrect information that would make a response problematic.
                         </p>
                       </div>
                     </div>
@@ -804,18 +795,18 @@ export default function RubricPage() {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#EF4444' }} />
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">Warning: Avoid Double Negatives</p>
+                          <p className="text-sm font-medium">Key Rule: Avoid Double Negatives</p>
                           <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                             A negative criterion must flag something <span className="font-medium">present</span> in the response, not something missing.
                           </p>
                           <div className="space-y-2 mt-2 text-xs">
                             <div>
                               <p>❌ <span className="font-medium">Bad:</span> "The response must not mention that plastic is good for the environment"</p>
-                              <p className="opacity-75 ml-4">→ Confusing: Are we penalizing for mentioning it, or for not avoiding it?</p>
+                              <p className="opacity-75 ml-4">→ This creates confusion about what we're penalizing</p>
                             </div>
                             <div>
                               <p>✅ <span className="font-medium">Good:</span> "The response mentions that plastic is good for the environment"</p>
-                              <p className="opacity-75 ml-4">→ Clear: If the response claims this, deduct points.</p>
+                              <p className="opacity-75 ml-4">→ This is clear: if present, it's wrong and points are deducted</p>
                             </div>
                           </div>
                         </div>
