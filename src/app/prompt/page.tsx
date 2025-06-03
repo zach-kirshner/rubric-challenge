@@ -307,22 +307,42 @@ export default function PromptPage() {
                             </li>
                             <li className="flex items-start gap-2">
                               <span className="text-green-500 mt-0.5">✓</span>
-                              <span>The response includes specific examples of reusable containers</span>
+                              <span>The response includes specific examples of reusable containers, such as stainless steel water bottles, glass food storage jars, or silicone snack bags</span>
                             </li>
                             <li className="flex items-start gap-2">
                               <span className="text-green-500 mt-0.5">✓</span>
-                              <span>The response explains the environmental impact of plastic waste</span>
+                              <span>The response explains at least one negative environmental impact of plastic waste, such as harm to marine life, contribution to microplastic pollution, or greenhouse gas emissions</span>
                             </li>
                             <li className="flex items-start gap-2">
                               <span className="text-green-500 mt-0.5">✓</span>
-                              <span>The response provides at least 3 distinct strategies</span>
+                              <span>The response provides at least 3 distinct strategies for reducing plastic waste</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response tailors strategies to daily life contexts (e.g., home, work, commuting)</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response mentions the concept of "refusing" single-use plastics before they enter your life</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">✓</span>
+                              <span>The response includes at least one strategy related to choosing products with minimal or plastic-free packaging</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-red-500 mt-0.5">✗</span>
+                              <span>The response suggests ineffective solutions like relying solely on recycling without reducing consumption</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-red-500 mt-0.5">✗</span>
+                              <span>The response contains factual errors about plastic decomposition rates or recycling capabilities</span>
                             </li>
                           </ul>
                         </div>
                       </div>
                       
                       <p className="text-xs mt-3" style={{ color: 'var(--color-muted-foreground)' }}>
-                        Together, these criteria paint a picture of what makes a comprehensive response to the prompt.
+                        Together, these criteria paint a comprehensive picture of what makes a high-quality response. Notice how they include both positive requirements (✓) and negative criteria (✗), cover different aspects of the topic, and are specific enough to be evaluated objectively.
                       </p>
                     </div>
                   </div>
