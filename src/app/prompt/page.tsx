@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Zap, ArrowRight, AlertCircle, Lock, Mail, User, HelpCircle, ChevronDown, ChevronUp, BookOpen, Target, CheckCircle } from 'lucide-react'
+import { Zap, ArrowRight, AlertCircle, Lock, Mail, User, HelpCircle, ChevronDown, ChevronUp, BookOpen, Target, CheckCircle, Lightbulb } from 'lucide-react'
+import ExamplePromptsModal from '@/components/ExamplePromptsModal'
 
 export default function PromptPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function PromptPage() {
   const [adminPassword, setAdminPassword] = useState('')
   const [adminError, setAdminError] = useState('')
   const [showInstructions, setShowInstructions] = useState(false)
+  const [showExamplePrompts, setShowExamplePrompts] = useState(false)
 
   // Check if user already has data in session
   useEffect(() => {
@@ -531,9 +533,20 @@ export default function PromptPage() {
           </div>
 
           <div className="card card-elevated animate-in" style={{ animationDelay: '0.1s' }}>
-            <label htmlFor="prompt" className="block text-sm font-medium mb-3">
-              Task Prompt
-            </label>
+            <div className="flex items-center justify-between mb-3">
+              <label htmlFor="prompt" className="block text-sm font-medium">
+                Task Prompt
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowExamplePrompts(true)}
+                className="text-sm btn-link flex items-center gap-1.5"
+                style={{ color: 'var(--gradient-mid)' }}
+              >
+                <Lightbulb className="w-4 h-4" />
+                View Example Prompts
+              </button>
+            </div>
             <textarea
               id="prompt"
               value={prompt}
@@ -652,6 +665,12 @@ export default function PromptPage() {
           </div>
         </div>
       )}
+
+      {/* Example Prompts Modal */}
+      <ExamplePromptsModal
+        isOpen={showExamplePrompts}
+        onClose={() => setShowExamplePrompts(false)}
+      />
     </div>
   )
 } 
