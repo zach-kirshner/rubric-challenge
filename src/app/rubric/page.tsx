@@ -690,6 +690,23 @@ export default function RubricPage() {
 
             {/* Modal Content */}
             <div className="p-6 space-y-6">
+              {/* Goal and Purpose */}
+              <div className="card" style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Target className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
+                  Your Goal
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
+                  The AI has generated a set of evaluation criteria based on your task prompt. Your job is to review 
+                  and refine these criteria to ensure they accurately capture what makes a good response to your task. 
+                  Think critically about whether the criteria are comprehensive, specific, and measurable.
+                </p>
+                <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--color-muted-foreground)' }}>
+                  <strong>Remember:</strong> These criteria will be used to evaluate AI responses to your task. 
+                  The better your rubric, the more effectively we can assess AI performance.
+                </p>
+              </div>
+
               {/* What you can do */}
               <div>
                 <h3 className="font-semibold mb-3">What You Can Do</h3>
