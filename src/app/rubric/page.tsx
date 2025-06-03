@@ -671,9 +671,9 @@ export default function RubricPage() {
             onClick={() => setShowHelpModal(false)}
           />
           
-          <div className="relative w-full max-w-2xl max-h-[80vh] overflow-y-auto card card-elevated animate-slide-up">
-            {/* Modal Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between p-6 pb-0" style={{ background: 'var(--color-card-background)' }}>
+          <div className="relative w-full max-w-2xl max-h-[85vh] card card-elevated animate-slide-up flex flex-col overflow-hidden">
+            {/* Modal Header - Fixed */}
+            <div className="flex items-center justify-between p-6 border-b flex-shrink-0" style={{ borderColor: 'var(--color-card-border)' }}>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
                   <HelpCircle className="w-5 h-5" style={{ color: 'var(--gradient-mid)' }} />
@@ -688,8 +688,8 @@ export default function RubricPage() {
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Goal and Purpose */}
               <div className="card" style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
