@@ -29,6 +29,12 @@ BEST PRACTICES FOR RUBRICS (from industry standards):
    - 10-30 criteria (as many as needed)
    - Target ~50% failure rate for appropriate difficulty
 
+6. EVIDENCE-BASED CRITERIA (NEW)
+   - Criteria backed by verifiable sources are stronger
+   - Citations to authoritative sources add credibility
+   - Evidence that contradicts initial assumptions shows critical thinking
+   - Sources should be checkable and publicly accessible
+
 EVALUATION FRAMEWORK:
 
 1. ADHERENCE TO BEST PRACTICES (30 points)
@@ -41,6 +47,9 @@ EVALUATION FRAMEWORK:
   - Non-self-contained criteria: -3 points each
   - Overlapping criteria: -5 points each
   - Vague criteria without specifics: -3 points each
+- BONUSES:
+  - Criteria with verifiable sources: +2 points each (max +10)
+  - Evidence contradicting AI assumptions: +3 points each (max +15)
 
 2. JUSTIFICATION QUALITY (25 points)
 - Does each justification explain WHY the change improves evaluation?
@@ -48,6 +57,7 @@ EVALUATION FRAMEWORK:
 - Do they demonstrate understanding of rubric best practices?
 - Generic justifications without specifics = low score
 - Missing or poor justifications = 0-5 points max
+- BONUS: Justifications citing sources = +2 points each (max +10)
 
 3. COVERAGE & BALANCE (20 points)
 - Comprehensive coverage of prompt requirements?
@@ -61,6 +71,7 @@ EVALUATION FRAMEWORK:
 - Can each be objectively verified?
 - Are subjective criteria minimized?
 - Do criteria include specific thresholds/values?
+- BONUS: Source-backed thresholds/values = +3 points (max +10)
 
 5. STRATEGIC IMPROVEMENTS (10 points)
 - Do changes address real weaknesses in AI rubric?
@@ -68,12 +79,20 @@ EVALUATION FRAMEWORK:
 - Are changes consistent with best practices?
 - Does final rubric represent genuine improvement?
 
+6. EVIDENCE & SOURCE QUALITY (BONUS: up to 20 points)
+- Quality of sources cited (authoritative, relevant, accessible)
+- Proper integration of evidence into criteria
+- Critical evaluation showing AI criteria may be incomplete/incorrect
+- Sources that substantiate specific thresholds or requirements
+- Evidence that challenges assumptions deserves highest marks
+
 CRITICAL VIOLATIONS (immediate penalties):
 - Creating stacked criteria: -5 to -10 points
 - Making criteria less specific/measurable: -5 to -10 points  
 - Removing essential self-contained info: -5 points
 - Creating overlapping criteria: -5 to -10 points
 - Poor diversity (all same type): -5 points
+- Citing unreliable/inaccessible sources: -3 points each
 
 GRADING RUBRIC:
 
@@ -82,30 +101,35 @@ EXCELLENT (85-100):
 - All changes clearly improve MECE compliance
 - Exceptional justifications showing deep understanding
 - Perfect atomicity and self-contained criteria
+- Strong use of evidence and sources
 
 GOOD (75-84):
 - Most changes align with best practices
 - Good understanding of MECE principles
 - Minor atomicity or specificity issues
 - Strong justifications
+- Some evidence-based improvements
 
 SATISFACTORY (65-74):
 - Basic understanding of good rubrics
 - Some violations of best practices
 - Adequate justifications
 - Rubric remains functional
+- Limited use of sources
 
 NEEDS IMPROVEMENT (50-64):
 - Multiple best practice violations
 - Weak understanding of MECE
 - Generic/poor justifications
 - Several non-atomic or vague criteria
+- No evidence-based thinking
 
 UNSATISFACTORY (<50):
 - Fundamental misunderstanding of rubrics
 - Many stacked/overlapping criteria
 - Poor/missing justifications
 - Criteria lack specificity
+- No attempt at evidence-based criteria
 
 OUTPUT FORMAT:
 {
@@ -116,11 +140,27 @@ OUTPUT FORMAT:
     "justification_quality": <0-25>,
     "coverage_balance": <0-20>,
     "measurability_objectivity": <0-15>,
-    "strategic_improvements": <0-10>
+    "strategic_improvements": <0-10>,
+    "evidence_bonus": <0-20>
+  },
+  "source_evaluation": {
+    "total_sources_cited": <number>,
+    "quality_sources": <number>,
+    "criteria_with_sources": <number>,
+    "contradictory_evidence": <number>,
+    "source_integration_quality": "<excellent|good|fair|poor|none>",
+    "notable_source_usage": [
+      {
+        "criterion": "<criterion text>",
+        "source": "<source cited>",
+        "impact": "<how it improves the criterion>",
+        "contradicts_ai": <boolean>
+      }
+    ]
   },
   "best_practice_violations": [
     {
-      "type": "stacked_criteria|non_self_contained|overlapping|vague|poor_diversity",
+      "type": "stacked_criteria|non_self_contained|overlapping|vague|poor_diversity|unreliable_source",
       "criterion": "<the problematic criterion>",
       "issue": "<specific violation of best practices>",
       "points_deducted": <number>
@@ -132,6 +172,7 @@ OUTPUT FORMAT:
     "negative_criteria": <number>,
     "objective_criteria": <number>,
     "subjective_criteria": <number>,
+    "evidence_based_criteria": <number>,
     "categories_covered": ["<list of categories>"],
     "estimated_difficulty": "<too_easy|appropriate|too_hard>"
   },
@@ -156,9 +197,14 @@ OUTPUT FORMAT:
     "self_contained_check": {
       "missing_info": ["<criteria lacking specific values/facts>"],
       "well_specified": ["<good examples of self-contained criteria>"]
+    },
+    "evidence_analysis": {
+      "well_sourced_criteria": ["<criteria with good source support>"],
+      "unsupported_claims": ["<criteria that could benefit from sources>"],
+      "critical_thinking_examples": ["<where user challenged AI assumptions with evidence>"]
     }
   },
-  "summary": "<200-250 word summary emphasizing adherence to rubric best practices and how changes impacted quality>"
+  "summary": "<200-250 word summary emphasizing adherence to rubric best practices, how changes impacted quality, and the use of evidence-based improvements>"
 }
 
 IMPORTANT GRADING NOTES:
@@ -167,4 +213,8 @@ IMPORTANT GRADING NOTES:
 - Reward improvements in atomicity and self-containment
 - A rubric with NO changes scores 60-65% (no improvement effort)
 - High scores (80+) require demonstrating understanding of ALL best practices
-- Generic changes without understanding best practices score poorly` 
+- Generic changes without understanding best practices score poorly
+- SPECIAL EMPHASIS: Award significant bonus points for evidence-based criteria
+- Criteria that cite sources and provide verifiable evidence should receive extra credit
+- Evidence that contradicts or improves upon AI-generated criteria shows exceptional critical thinking
+- Maximum total score with bonuses can exceed 100 (cap at 100 for final score)` 

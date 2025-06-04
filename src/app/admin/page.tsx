@@ -83,6 +83,8 @@ export default function AdminPage() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'submissions'>('dashboard')
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  const [isGrading, setIsGrading] = useState(false)
+  const [gradingProgress, setGradingProgress] = useState<string>('')
 
   // Check admin access
   useEffect(() => {
@@ -150,21 +152,130 @@ export default function AdminPage() {
     setIsExporting(true)
     try {
       const response = await fetch(`/api/admin/export?type=${type}`)
-      if (!response.ok) throw new Error('Failed to export')
+      if (!response.ok) throw new Error('Export failed')
       
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `${type}_export.csv`
+      a.download = `${type}_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
     } catch (error) {
-      logger.error(error instanceof Error ? error.message : String(error), 'Error exporting data')
+      logger.error('Export failed', error instanceof Error ? error.message : String(error))
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const checkAndGradeUngraded = async () => {
+    setIsGrading(true)
+    setGradingProgress('Checking for ungraded submissions...')
+    
+    try {
+      // First check how many ungraded submissions exist
+      const checkResponse = await fetch('/api/admin/check-ungraded')
+      if (!checkResponse.ok) throw new Error('Failed to check ungraded submissions')
+      
+      const checkData = await checkResponse.json()
+      
+      if (checkData.ungradedCount === 0) {
+        setGradingProgress('All submissions are already graded!')
+        setTimeout(() => {
+          setIsGrading(false)
+          setGradingProgress('')
+        }, 2000)
+        return
+      }
+      
+      setGradingProgress(`Found ${checkData.ungradedCount} ungraded submissions. Starting grading...`)
+      
+      // Grade all ungraded submissions
+      const gradeResponse = await fetch('/api/admin/check-ungraded', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ gradeAll: true })
+      })
+      
+      if (!gradeResponse.ok) throw new Error('Failed to grade submissions')
+      
+      const gradeData = await gradeResponse.json()
+      
+      setGradingProgress(`${gradeData.message}`)
+      
+      // Refresh the current view data
+      if (currentView === 'dashboard') {
+        await fetchDashboardData()
+      } else {
+        await fetchSubmissions()
+      }
+      
+      setTimeout(() => {
+        setIsGrading(false)
+        setGradingProgress('')
+      }, 3000)
+      
+    } catch (error) {
+      logger.error('Grading failed', error instanceof Error ? error.message : String(error))
+      setGradingProgress('Error: Failed to grade submissions')
+      setTimeout(() => {
+        setIsGrading(false)
+        setGradingProgress('')
+      }, 3000)
+    }
+  }
+
+  const gradeIndividualSubmission = async (submissionId: string) => {
+    setIsGrading(true)
+    setGradingProgress('Grading submission...')
+    
+    try {
+      const response = await fetch('/api/admin/grade-rubric', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ submissionId })
+      })
+      
+      if (!response.ok) throw new Error('Failed to grade submission')
+      
+      const gradingResult = await response.json()
+      
+      // Update the submission in the database
+      await fetch('/api/admin/submissions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId,
+          gradingResult,
+          gradedAt: new Date()
+        })
+      })
+      
+      setGradingProgress('Submission graded successfully!')
+      
+      // Refresh the submission details
+      await fetchSubmissionDetails(submissionId)
+      
+      setTimeout(() => {
+        setIsGrading(false)
+        setGradingProgress('')
+      }, 2000)
+      
+    } catch (error) {
+      logger.error('Individual grading failed', error instanceof Error ? error.message : String(error))
+      setGradingProgress('Error: Failed to grade submission')
+      setTimeout(() => {
+        setIsGrading(false)
+        setGradingProgress('')
+      }, 3000)
     }
   }
 
@@ -288,6 +399,25 @@ export default function AdminPage() {
                 <h1 className="text-2xl font-bold">Submission Evaluation</h1>
               </div>
               <div className="flex items-center gap-6">
+                {!gradingResult && (
+                  <button
+                    onClick={() => gradeIndividualSubmission(selectedSubmission.submission.id)}
+                    disabled={isGrading}
+                    className="btn-primary"
+                  >
+                    {isGrading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Grading...
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-4 h-4 mr-2" />
+                        Grade This Submission
+                      </>
+                    )}
+                  </button>
+                )}
                 <div className="text-center">
                   <div className="text-3xl font-bold" style={{ color: getScoreColor(combinedScore) }}>
                     {combinedScore}%
@@ -312,6 +442,18 @@ export default function AdminPage() {
             </div>
           </div>
         </header>
+
+        {/* Grading Progress Notification */}
+        {gradingProgress && (
+          <div className="max-w-7xl mx-auto px-6 py-2">
+            <div className="card card-elevated text-center py-3" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
+              <div className="flex items-center justify-center gap-3">
+                <RefreshCw className="w-5 h-5 animate-spin" style={{ color: 'var(--gradient-mid)' }} />
+                <p className="font-medium">{gradingProgress}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="max-w-7xl mx-auto px-6 py-8">
           {/* Submission Info */}
@@ -709,6 +851,127 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              {/* Source Evaluation Section */}
+              {gradingResult.source_evaluation && (
+                <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                  <h3 className="font-medium mb-3">Evidence & Source Analysis</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Source Metrics */}
+                    <div className="card" style={{ backgroundColor: 'var(--color-muted)' }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Award className="w-4 h-4" style={{ color: 'var(--gradient-mid)' }} />
+                        <h4 className="text-sm font-medium">Source Metrics</h4>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Total Sources Cited:</span>
+                          <span className="font-medium">{gradingResult.source_evaluation.total_sources_cited}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Quality Sources:</span>
+                          <span className="font-medium">{gradingResult.source_evaluation.quality_sources}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Criteria with Sources:</span>
+                          <span className="font-medium">{gradingResult.source_evaluation.criteria_with_sources}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Contradictory Evidence:</span>
+                          <span className="font-medium" style={{ color: gradingResult.source_evaluation.contradictory_evidence > 0 ? '#22C55E' : 'inherit' }}>
+                            {gradingResult.source_evaluation.contradictory_evidence}
+                          </span>
+                        </div>
+                        <div className="flex justify-between mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                          <span>Integration Quality:</span>
+                          <span className="font-medium capitalize" style={{ 
+                            color: gradingResult.source_evaluation.source_integration_quality === 'excellent' ? '#22C55E' :
+                                   gradingResult.source_evaluation.source_integration_quality === 'good' ? '#3B82F6' :
+                                   gradingResult.source_evaluation.source_integration_quality === 'fair' ? '#F59E0B' :
+                                   '#EF4444'
+                          }}>
+                            {gradingResult.source_evaluation.source_integration_quality}
+                          </span>
+                        </div>
+                        {gradingResult.breakdown.evidence_bonus > 0 && (
+                          <div className="flex justify-between mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                            <span className="font-medium">Evidence Bonus:</span>
+                            <span className="font-bold" style={{ color: '#22C55E' }}>
+                              +{gradingResult.breakdown.evidence_bonus} pts
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Notable Source Usage */}
+                    {gradingResult.source_evaluation.notable_source_usage && gradingResult.source_evaluation.notable_source_usage.length > 0 && (
+                      <div className="card" style={{ backgroundColor: 'var(--color-muted)' }}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <CheckCircle className="w-4 h-4" style={{ color: '#22C55E' }} />
+                          <h4 className="text-sm font-medium">Notable Source Usage</h4>
+                        </div>
+                        <div className="space-y-3">
+                          {gradingResult.source_evaluation.notable_source_usage.slice(0, 3).map((usage: any, idx: number) => (
+                            <div key={idx} className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
+                              <p className="text-xs font-medium mb-1">{usage.criterion}</p>
+                              <p className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>
+                                Source: {usage.source}
+                              </p>
+                              <p className="text-xs mt-1">
+                                <span style={{ color: usage.contradicts_ai ? '#F59E0B' : '#3B82F6' }}>
+                                  {usage.contradicts_ai ? '⚡ Contradicts AI' : '✓ Supports'}: 
+                                </span> {usage.impact}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Evidence Analysis Feedback */}
+                  {gradingResult.specific_feedback?.evidence_analysis && (
+                    <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
+                      <p className="text-sm font-medium mb-2" style={{ color: 'var(--gradient-mid)' }}>
+                        Evidence-Based Improvements
+                      </p>
+                      <div className="grid grid-cols-3 gap-4 text-xs">
+                        {gradingResult.specific_feedback.evidence_analysis.well_sourced_criteria?.length > 0 && (
+                          <div>
+                            <span className="font-medium text-green-600">Well-Sourced:</span>
+                            <ul className="mt-1 space-y-1">
+                              {gradingResult.specific_feedback.evidence_analysis.well_sourced_criteria.map((criterion: string, idx: number) => (
+                                <li key={idx} className="ml-2">• {criterion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {gradingResult.specific_feedback.evidence_analysis.unsupported_claims?.length > 0 && (
+                          <div>
+                            <span className="font-medium text-orange-600">Could Use Sources:</span>
+                            <ul className="mt-1 space-y-1">
+                              {gradingResult.specific_feedback.evidence_analysis.unsupported_claims.map((claim: string, idx: number) => (
+                                <li key={idx} className="ml-2">• {claim}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {gradingResult.specific_feedback.evidence_analysis.critical_thinking_examples?.length > 0 && (
+                          <div>
+                            <span className="font-medium" style={{ color: 'var(--gradient-mid)' }}>Critical Thinking:</span>
+                            <ul className="mt-1 space-y-1">
+                              {gradingResult.specific_feedback.evidence_analysis.critical_thinking_examples.map((example: string, idx: number) => (
+                                <li key={idx} className="ml-2">• {example}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -848,6 +1111,24 @@ export default function AdminPage() {
               {/* Export Buttons */}
               <div className="flex gap-2">
                 <button
+                  onClick={checkAndGradeUngraded}
+                  disabled={isGrading}
+                  className="btn-secondary"
+                  title="Grade ungraded submissions"
+                >
+                  {isGrading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Grading...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4 mr-2" />
+                      Grade Ungraded
+                    </>
+                  )}
+                </button>
+                <button
                   onClick={() => exportData('users')}
                   disabled={isExporting}
                   className="btn-secondary"
@@ -880,6 +1161,18 @@ export default function AdminPage() {
           </div>
         </div>
       </header>
+
+      {/* Grading Progress Notification */}
+      {gradingProgress && (
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="card card-elevated text-center py-3" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
+            <div className="flex items-center justify-center gap-3">
+              <RefreshCw className="w-5 h-5 animate-spin" style={{ color: 'var(--gradient-mid)' }} />
+              <p className="font-medium">{gradingProgress}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {isLoading ? (
@@ -1082,25 +1375,28 @@ export default function AdminPage() {
                         <div className="flex gap-4 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                           <span>User: {submission.fullName}</span>
                           <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                          {!submission.isGraded && (
+                            <span className="text-orange-600 font-medium">⚠️ Ungraded</span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-center">
-                          <div className="text-2xl font-bold" style={{ color: getScoreColor(combinedScore) }}>
-                            {combinedScore}%
+                          <div className="text-2xl font-bold" style={{ color: submission.isGraded ? getScoreColor(combinedScore) : '#9CA3AF' }}>
+                            {submission.isGraded ? `${combinedScore}%` : '—'}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--color-muted-foreground)' }}>Overall</div>
                         </div>
                         <div className="flex gap-2 text-xs">
                           <div className="text-center">
-                            <div className="font-medium" style={{ color: getScoreColor(promptScore) }}>
-                              {promptScore}%
+                            <div className="font-medium" style={{ color: submission.isGraded ? getScoreColor(promptScore) : '#9CA3AF' }}>
+                              {submission.isGraded ? `${promptScore}%` : '—'}
                             </div>
                             <div style={{ color: 'var(--color-muted-foreground)' }}>Prompt</div>
                           </div>
                           <div className="text-center">
-                            <div className="font-medium" style={{ color: getScoreColor(rubricScore) }}>
-                              {rubricScore}%
+                            <div className="font-medium" style={{ color: submission.isGraded ? getScoreColor(rubricScore) : '#9CA3AF' }}>
+                              {submission.isGraded ? `${rubricScore}%` : '—'}
                             </div>
                             <div style={{ color: 'var(--color-muted-foreground)' }}>Rubric</div>
                           </div>

@@ -292,6 +292,16 @@ Provide your assessment in the specified JSON format.`
 
     const gradingResult = JSON.parse(jsonMatch[0])
     
+    // Cap the score at 100 since bonuses can exceed the maximum
+    if (gradingResult.score > 100) {
+      logger.info({ 
+        submissionId: submission.id,
+        originalScore: gradingResult.score,
+        cappedScore: 100 
+      }, 'Capping rubric score at 100')
+      gradingResult.score = 100
+    }
+    
     // Add prompt grade to the grading result
     if (promptGrade) {
       logger.info({ 
@@ -478,7 +488,8 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           logger.error({ 
             submissionId,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
           }, 'Failed to update submission with grading result')
         }
       } else {
@@ -487,8 +498,9 @@ export async function POST(request: NextRequest) {
     }).catch((error) => {
       logger.error({ 
         submissionId,
-        error: error instanceof Error ? error.message : String(error)
-      }, 'Async grading failed')
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }, 'Async grading failed with exception')
     })
     
     logger.info({ 

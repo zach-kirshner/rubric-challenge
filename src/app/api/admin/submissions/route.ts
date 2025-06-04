@@ -118,6 +118,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { submissionId, gradingResult, gradedAt } = body
+
+    if (!submissionId || !gradingResult) {
+      return NextResponse.json(
+        { error: 'Submission ID and grading result are required' },
+        { status: 400 }
+      )
+    }
+
+    // Update the submission with grading result
+    const updatedSubmission = await databaseService.updateSubmission(submissionId, {
+      gradingResult,
+      gradedAt: gradedAt || new Date()
+    })
+
+    logger.info({ 
+      submissionId,
+      rubricScore: gradingResult.score,
+      promptScore: gradingResult.promptGrade?.score
+    }, 'Submission grading updated via admin')
+
+    return NextResponse.json({ 
+      success: true, 
+      submission: updatedSubmission 
+    })
+  } catch (error) {
+    logger.error(error instanceof Error ? error.message : String(error), 'Error updating submission grading')
+    return NextResponse.json(
+      { error: 'Failed to update submission grading' },
+      { status: 500 }
+    )
+  }
+}
+
 function generateInsights(submission: any): string[] {
   const insights = []
   

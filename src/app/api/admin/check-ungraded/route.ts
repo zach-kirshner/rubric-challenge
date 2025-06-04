@@ -10,55 +10,123 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
+export async function GET(request: NextRequest) {
+  try {
+    // Get all submissions
+    const allSubmissions = await databaseService.getAllSubmissions()
+    
+    // Filter ungraded submissions
+    const ungradedSubmissions = allSubmissions.filter(submission => !submission.gradingResult)
+    
+    logger.info({ 
+      totalSubmissions: allSubmissions.length,
+      ungradedCount: ungradedSubmissions.length 
+    }, 'Checked for ungraded submissions')
+    
+    return NextResponse.json({
+      totalSubmissions: allSubmissions.length,
+      ungradedCount: ungradedSubmissions.length,
+      ungradedSubmissions: ungradedSubmissions.map(s => ({
+        id: s.id,
+        email: s.email,
+        fullName: s.fullName,
+        submittedAt: s.submittedAt,
+        prompt: s.prompt.substring(0, 100) + '...'
+      }))
+    })
+  } catch (error) {
+    logger.error(error instanceof Error ? error.message : String(error), 'Error checking ungraded submissions')
+    return NextResponse.json(
+      { error: 'Failed to check ungraded submissions' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { submissionId } = body
-
-    if (!submissionId) {
-      return NextResponse.json(
-        { error: 'Submission ID is required' },
-        { status: 400 }
-      )
-    }
-
-    // Find the submission
-    const submission = await databaseService.getSubmission(submissionId)
+    const { gradeAll } = body
     
-    if (!submission) {
-      return NextResponse.json(
-        { error: 'Submission not found' },
-        { status: 404 }
-      )
+    // Get all submissions
+    const allSubmissions = await databaseService.getAllSubmissions()
+    
+    // Filter ungraded submissions
+    const ungradedSubmissions = allSubmissions.filter(submission => !submission.gradingResult)
+    
+    if (ungradedSubmissions.length === 0) {
+      return NextResponse.json({
+        message: 'No ungraded submissions found',
+        gradedCount: 0
+      })
     }
-
-    logger.info({ submissionId }, 'Grading submission')
-
-    // Grade both prompt and rubric in parallel
-    const [rubricGradeResult, promptGradeResult] = await Promise.all([
-      gradeRubric(submission),
-      gradePrompt(submission.prompt)
-    ])
-
-    // Combine results
-    const combinedResult = {
-      ...rubricGradeResult,
-      promptGrade: promptGradeResult
+    
+    logger.info({ count: ungradedSubmissions.length }, 'Found ungraded submissions to grade')
+    
+    const results = []
+    
+    for (const submission of ungradedSubmissions) {
+      try {
+        logger.info({ submissionId: submission.id }, 'Grading submission')
+        
+        // Grade both prompt and rubric in parallel
+        const [rubricGradeResult, promptGradeResult] = await Promise.all([
+          gradeRubric(submission),
+          gradePrompt(submission.prompt)
+        ])
+        
+        // Combine results
+        const combinedResult = {
+          ...rubricGradeResult,
+          promptGrade: promptGradeResult
+        }
+        
+        // Update submission with grading result
+        await databaseService.updateSubmission(submission.id, {
+          gradingResult: combinedResult,
+          gradedAt: new Date()
+        })
+        
+        results.push({
+          id: submission.id,
+          success: true,
+          rubricScore: rubricGradeResult.score,
+          promptScore: promptGradeResult?.score
+        })
+        
+        logger.info({ 
+          submissionId: submission.id,
+          rubricScore: rubricGradeResult.score,
+          promptScore: promptGradeResult?.score
+        }, 'Successfully graded submission')
+        
+      } catch (error) {
+        logger.error({ 
+          submissionId: submission.id,
+          error: error instanceof Error ? error.message : String(error)
+        }, 'Failed to grade submission')
+        
+        results.push({
+          id: submission.id,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+      }
     }
-
-    logger.info({ 
-      submissionId,
-      rubricScore: rubricGradeResult.score,
-      rubricGrade: rubricGradeResult.grade,
-      promptScore: promptGradeResult?.score,
-      promptGrade: promptGradeResult?.grade
-    }, 'Submission graded successfully')
-
-    return NextResponse.json(combinedResult)
+    
+    const successCount = results.filter(r => r.success).length
+    
+    return NextResponse.json({
+      message: `Graded ${successCount} out of ${ungradedSubmissions.length} submissions`,
+      gradedCount: successCount,
+      failedCount: ungradedSubmissions.length - successCount,
+      results
+    })
+    
   } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error), 'Error grading submission')
+    logger.error(error instanceof Error ? error.message : String(error), 'Error grading submissions')
     return NextResponse.json(
-      { error: 'Failed to grade submission' },
+      { error: 'Failed to grade submissions' },
       { status: 500 }
     )
   }
