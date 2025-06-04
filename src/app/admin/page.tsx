@@ -325,66 +325,6 @@ export default function AdminPage() {
     }
   }
 
-  const bulkDeleteByEmail = async () => {
-    // First ask for password
-    const password = prompt('Enter admin password to perform bulk deletion:')
-    if (!password) return
-    
-    if (password !== 'Zoekirsh@6431') {
-      alert('Incorrect password. Bulk deletion cancelled.')
-      return
-    }
-    
-    const email = prompt('Enter the email address to delete all submissions for:')
-    if (!email) return
-    
-    if (!confirm(`Are you sure you want to delete ALL submissions for ${email}? This action cannot be undone.`)) {
-      return
-    }
-    
-    setIsGrading(true) // Reuse the grading state for the loading indicator
-    setGradingProgress(`Deleting all submissions for ${email}...`)
-    
-    try {
-      const response = await fetch(`/api/admin/submissions?email=${encodeURIComponent(email)}`, {
-        method: 'DELETE',
-        headers: {
-          'x-admin-password': password
-        }
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to delete submissions')
-      }
-      
-      const result = await response.json()
-      setGradingProgress(result.message)
-      
-      // Refresh the data
-      if (currentView === 'dashboard') {
-        await fetchDashboardData()
-      }
-      await fetchSubmissions()
-      
-      // Clear selected submission if it belonged to the deleted user
-      if (selectedSubmission && selectedSubmission.submission.email.toLowerCase() === email.toLowerCase()) {
-        setSelectedSubmission(null)
-      }
-      
-      setTimeout(() => {
-        setIsGrading(false)
-        setGradingProgress('')
-      }, 3000)
-      
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete submissions'
-      alert(message)
-      setIsGrading(false)
-      setGradingProgress('')
-    }
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
@@ -1238,20 +1178,6 @@ export default function AdminPage() {
               
               {/* Export Buttons */}
               <div className="flex gap-2">
-                <button
-                  onClick={bulkDeleteByEmail}
-                  disabled={isGrading}
-                  className="btn-secondary"
-                  style={{ 
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    color: '#EF4444',
-                    borderColor: '#EF4444'
-                  }}
-                  title="Delete all submissions by email"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Bulk Delete
-                </button>
                 <button
                   onClick={checkAndGradeUngraded}
                   disabled={isGrading}

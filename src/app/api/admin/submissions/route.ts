@@ -170,78 +170,37 @@ export async function DELETE(request: NextRequest) {
     
     const { searchParams } = new URL(request.url)
     const submissionId = searchParams.get('id')
-    const email = searchParams.get('email')
 
-    // Single submission deletion
-    if (submissionId) {
-      // Check if submission exists
-      const submission = await databaseService.getSubmission(submissionId)
-      
-      if (!submission) {
-        return NextResponse.json(
-          { error: 'Submission not found' },
-          { status: 404 }
-        )
-      }
-
-      // Delete the submission (cascades to criteria and actions)
-      await databaseService.deleteSubmission(submissionId)
-
-      logger.info({ 
-        submissionId,
-        email: submission.email,
-        fullName: submission.fullName
-      }, 'Submission deleted via admin')
-
-      return NextResponse.json({ 
-        success: true,
-        message: 'Submission deleted successfully'
-      })
+    if (!submissionId) {
+      return NextResponse.json(
+        { error: 'Submission ID is required' },
+        { status: 400 }
+      )
     }
 
-    // Bulk deletion by email
-    if (email) {
-      const allSubmissions = await databaseService.getAllSubmissions()
-      const userSubmissions = allSubmissions.filter(s => s.email.toLowerCase() === email.toLowerCase())
-      
-      if (userSubmissions.length === 0) {
-        return NextResponse.json(
-          { error: 'No submissions found for this email' },
-          { status: 404 }
-        )
-      }
-
-      // Delete all submissions for this email
-      let deletedCount = 0
-      for (const submission of userSubmissions) {
-        try {
-          await databaseService.deleteSubmission(submission.id)
-          deletedCount++
-        } catch (error) {
-          logger.error({ 
-            submissionId: submission.id,
-            error: error instanceof Error ? error.message : String(error)
-          }, 'Failed to delete submission during bulk delete')
-        }
-      }
-
-      logger.info({ 
-        email,
-        deletedCount,
-        totalSubmissions: userSubmissions.length
-      }, 'Bulk deletion completed')
-
-      return NextResponse.json({ 
-        success: true,
-        message: `Deleted ${deletedCount} out of ${userSubmissions.length} submissions for ${email}`,
-        deletedCount
-      })
+    // Check if submission exists
+    const submission = await databaseService.getSubmission(submissionId)
+    
+    if (!submission) {
+      return NextResponse.json(
+        { error: 'Submission not found' },
+        { status: 404 }
+      )
     }
 
-    return NextResponse.json(
-      { error: 'Either submission ID or email is required' },
-      { status: 400 }
-    )
+    // Delete the submission (cascades to criteria and actions)
+    await databaseService.deleteSubmission(submissionId)
+
+    logger.info({ 
+      submissionId,
+      email: submission.email,
+      fullName: submission.fullName
+    }, 'Submission deleted via admin')
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Submission deleted successfully'
+    })
   } catch (error) {
     logger.error(error instanceof Error ? error.message : String(error), 'Error deleting submission')
     return NextResponse.json(
