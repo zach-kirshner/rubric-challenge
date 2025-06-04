@@ -99,6 +99,28 @@ export default function AdminPage() {
     fetchSubmissions()
   }, [router])
 
+  // Auto-refresh to update grading status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only refresh if we're on the submissions view
+      if (currentView === 'submissions') {
+        fetchSubmissions()
+      }
+      
+      // Also refresh detail view if viewing an ungraded submission
+      if (selectedSubmission && !selectedSubmission.evaluation.gradingResult) {
+        const submissionTime = new Date(selectedSubmission.submission.submittedAt).getTime()
+        const timeSinceSubmission = Date.now() - submissionTime
+        // Only refresh if submitted within last 5 minutes
+        if (timeSinceSubmission < 5 * 60 * 1000) {
+          fetchSubmissionDetails(selectedSubmission.submission.id)
+        }
+      }
+    }, 10000) // Refresh every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [currentView, selectedSubmission])
+
   const fetchDashboardData = async () => {
     try {
       const response = await fetch('/api/admin/dashboard')
@@ -335,6 +357,19 @@ export default function AdminPage() {
     })
   }
 
+  const isLikelyGrading = (submission: Submission) => {
+    // If already graded, it's not being graded
+    if (submission.isGraded) return false
+    
+    // If submitted less than 2 minutes ago, it's likely being graded
+    const submittedTime = new Date(submission.submittedAt).getTime()
+    const now = Date.now()
+    const timeDiff = now - submittedTime
+    const twoMinutes = 2 * 60 * 1000
+    
+    return timeDiff < twoMinutes
+  }
+
   const getScoreColor = (score: number) => {
     if (score >= 90) return '#22C55E'
     if (score >= 80) return '#3B82F6'
@@ -427,6 +462,13 @@ export default function AdminPage() {
     const promptScore = gradingResult?.promptGrade?.score || 0
     const rubricScore = gradingResult?.score || selectedSubmission.evaluation.qualityScore
     const combinedScore = Math.round((promptScore + rubricScore) / 2)
+    
+    // Create a temporary submission object to check grading status
+    const submissionForGradingCheck = {
+      submittedAt: selectedSubmission.submission.submittedAt,
+      isGraded: !!gradingResult
+    } as Submission
+    const isCurrentlyGrading = isLikelyGrading(submissionForGradingCheck)
 
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -446,23 +488,34 @@ export default function AdminPage() {
               </div>
               <div className="flex items-center gap-6">
                 {!gradingResult && (
-                  <button
-                    onClick={() => gradeIndividualSubmission(selectedSubmission.submission.id)}
-                    disabled={isGrading}
-                    className="btn-primary"
-                  >
-                    {isGrading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Grading...
-                      </>
+                  <>
+                    {isCurrentlyGrading ? (
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                        <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#3B82F6' }} />
+                        <span className="font-medium" style={{ color: '#3B82F6' }}>
+                          Auto-grading in progress...
+                        </span>
+                      </div>
                     ) : (
-                      <>
-                        <Award className="w-4 h-4 mr-2" />
-                        Grade This Submission
-                      </>
+                      <button
+                        onClick={() => gradeIndividualSubmission(selectedSubmission.submission.id)}
+                        disabled={isGrading}
+                        className="btn-primary"
+                      >
+                        {isGrading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            Grading...
+                          </>
+                        ) : (
+                          <>
+                            <Award className="w-4 h-4 mr-2" />
+                            Grade This Submission
+                          </>
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </>
                 )}
                 <button
                   onClick={() => deleteSubmission(selectedSubmission.submission.id)}
@@ -528,6 +581,12 @@ export default function AdminPage() {
           <div className="card mb-6">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold">Prompt</h2>
+              {!gradingResult && isCurrentlyGrading && (
+                <div className="flex items-center gap-2 text-sm">
+                  <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#3B82F6' }} />
+                  <span style={{ color: '#3B82F6' }}>Auto-grading in progress...</span>
+                </div>
+              )}
             </div>
             <p className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
               {selectedSubmission.submission.prompt}
@@ -1445,6 +1504,12 @@ export default function AdminPage() {
                           <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
                           {!submission.isGraded && (
                             <span className="text-orange-600 font-medium">⚠️ Ungraded</span>
+                          )}
+                          {isLikelyGrading(submission) && (
+                            <span className="text-blue-600 font-medium animate-pulse">
+                              <RefreshCw className="w-3 h-3 inline animate-spin mr-1" />
+                              Grading in progress...
+                            </span>
                           )}
                         </div>
                       </div>
