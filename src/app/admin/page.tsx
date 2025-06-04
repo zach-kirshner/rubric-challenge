@@ -281,6 +281,15 @@ export default function AdminPage() {
   }
 
   const deleteSubmission = async (submissionId: string) => {
+    // First ask for password
+    const password = prompt('Enter admin password to delete this submission:')
+    if (!password) return
+    
+    if (password !== 'Zoekirsh@6431') {
+      alert('Incorrect password. Deletion cancelled.')
+      return
+    }
+    
     if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
       return
     }
@@ -289,7 +298,10 @@ export default function AdminPage() {
     
     try {
       const response = await fetch(`/api/admin/submissions?id=${submissionId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'x-admin-password': password
+        }
       })
       
       if (!response.ok) throw new Error('Failed to delete submission')
@@ -314,6 +326,15 @@ export default function AdminPage() {
   }
 
   const bulkDeleteByEmail = async () => {
+    // First ask for password
+    const password = prompt('Enter admin password to perform bulk deletion:')
+    if (!password) return
+    
+    if (password !== 'Zoekirsh@6431') {
+      alert('Incorrect password. Bulk deletion cancelled.')
+      return
+    }
+    
     const email = prompt('Enter the email address to delete all submissions for:')
     if (!email) return
     
@@ -326,7 +347,10 @@ export default function AdminPage() {
     
     try {
       const response = await fetch(`/api/admin/submissions?email=${encodeURIComponent(email)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'x-admin-password': password
+        }
       })
       
       if (!response.ok) {

@@ -157,6 +157,17 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Check for password in headers
+    const password = request.headers.get('x-admin-password')
+    
+    if (!password || password !== 'Zoekirsh@6431') {
+      logger.warn('Unauthorized delete attempt - invalid password')
+      return NextResponse.json(
+        { error: 'Unauthorized - invalid password' },
+        { status: 401 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const submissionId = searchParams.get('id')
     const email = searchParams.get('email')
