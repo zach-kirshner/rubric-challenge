@@ -188,6 +188,23 @@ class DatabaseService {
     })
   }
 
+  async deleteSubmission(id: string) {
+    return withCleanConnection(async () => {
+      try {
+        // Delete will cascade to criteria and criteriaActions due to schema configuration
+        await prisma.submission.delete({
+          where: { id }
+        })
+
+        logger.info(`Submission ${id} deleted from database`)
+        return true
+      } catch (error) {
+        logger.error('Error deleting submission from database', error instanceof Error ? error.message : String(error))
+        throw error
+      }
+    })
+  }
+
   private formatSubmission(submission: any): DatabaseSubmission {
     // Calculate stats
     const stats = {

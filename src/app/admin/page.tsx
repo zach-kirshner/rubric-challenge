@@ -85,6 +85,7 @@ export default function AdminPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [isGrading, setIsGrading] = useState(false)
   const [gradingProgress, setGradingProgress] = useState<string>('')
+  const [deletingSubmissionId, setDeletingSubmissionId] = useState<string | null>(null)
 
   // Check admin access
   useEffect(() => {
@@ -279,6 +280,87 @@ export default function AdminPage() {
     }
   }
 
+  const deleteSubmission = async (submissionId: string) => {
+    if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingSubmissionId(submissionId)
+    
+    try {
+      const response = await fetch(`/api/admin/submissions?id=${submissionId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) throw new Error('Failed to delete submission')
+      
+      // If we're viewing the deleted submission, go back to the list
+      if (selectedSubmission && selectedSubmission.submission.id === submissionId) {
+        setSelectedSubmission(null)
+      }
+      
+      // Refresh the data
+      if (currentView === 'dashboard') {
+        await fetchDashboardData()
+      }
+      await fetchSubmissions()
+      
+    } catch (error) {
+      logger.error('Delete failed', error instanceof Error ? error.message : String(error))
+      alert('Failed to delete submission. Please try again.')
+    } finally {
+      setDeletingSubmissionId(null)
+    }
+  }
+
+  const bulkDeleteByEmail = async () => {
+    const email = prompt('Enter the email address to delete all submissions for:')
+    if (!email) return
+    
+    if (!confirm(`Are you sure you want to delete ALL submissions for ${email}? This action cannot be undone.`)) {
+      return
+    }
+    
+    setIsGrading(true) // Reuse the grading state for the loading indicator
+    setGradingProgress(`Deleting all submissions for ${email}...`)
+    
+    try {
+      const response = await fetch(`/api/admin/submissions?email=${encodeURIComponent(email)}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete submissions')
+      }
+      
+      const result = await response.json()
+      setGradingProgress(result.message)
+      
+      // Refresh the data
+      if (currentView === 'dashboard') {
+        await fetchDashboardData()
+      }
+      await fetchSubmissions()
+      
+      // Clear selected submission if it belonged to the deleted user
+      if (selectedSubmission && selectedSubmission.submission.email.toLowerCase() === email.toLowerCase()) {
+        setSelectedSubmission(null)
+      }
+      
+      setTimeout(() => {
+        setIsGrading(false)
+        setGradingProgress('')
+      }, 3000)
+      
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete submissions'
+      alert(message)
+      setIsGrading(false)
+      setGradingProgress('')
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
@@ -418,6 +500,28 @@ export default function AdminPage() {
                     )}
                   </button>
                 )}
+                <button
+                  onClick={() => deleteSubmission(selectedSubmission.submission.id)}
+                  disabled={deletingSubmissionId === selectedSubmission.submission.id}
+                  className="btn-secondary"
+                  style={{ 
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: '#EF4444',
+                    borderColor: '#EF4444'
+                  }}
+                >
+                  {deletingSubmissionId === selectedSubmission.submission.id ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </button>
                 <div className="text-center">
                   <div className="text-3xl font-bold" style={{ color: getScoreColor(combinedScore) }}>
                     {combinedScore}%
@@ -1111,6 +1215,20 @@ export default function AdminPage() {
               {/* Export Buttons */}
               <div className="flex gap-2">
                 <button
+                  onClick={bulkDeleteByEmail}
+                  disabled={isGrading}
+                  className="btn-secondary"
+                  style={{ 
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: '#EF4444',
+                    borderColor: '#EF4444'
+                  }}
+                  title="Delete all submissions by email"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Bulk Delete
+                </button>
+                <button
                   onClick={checkAndGradeUngraded}
                   disabled={isGrading}
                   className="btn-secondary"
@@ -1415,7 +1533,28 @@ export default function AdminPage() {
                             {submission.stats.deletedCount}
                           </div>
                         </div>
-                        <Eye className="w-5 h-5" style={{ color: 'var(--color-muted-foreground)' }} />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteSubmission(submission.id)
+                            }}
+                            disabled={deletingSubmissionId === submission.id}
+                            className="icon-button"
+                            style={{ 
+                              color: '#EF4444',
+                              opacity: deletingSubmissionId === submission.id ? 0.5 : 1
+                            }}
+                            title="Delete submission"
+                          >
+                            {deletingSubmissionId === submission.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                          <Eye className="w-5 h-5" style={{ color: 'var(--color-muted-foreground)' }} />
+                        </div>
                       </div>
                     </div>
                   </div>
