@@ -65,52 +65,73 @@ export async function POST(request: NextRequest) {
     
     const results = []
     
-    for (const submission of ungradedSubmissions) {
-      try {
-        logger.info({ submissionId: submission.id }, 'Grading submission')
-        
-        // Grade both prompt and rubric in parallel
-        const [rubricGradeResult, promptGradeResult] = await Promise.all([
-          gradeRubric(submission),
-          gradePrompt(submission.prompt)
-        ])
-        
-        // Combine results
-        const combinedResult = {
-          ...rubricGradeResult,
-          promptGrade: promptGradeResult
+    // Add rate limiting - process in batches with delays
+    const BATCH_SIZE = 5
+    const DELAY_BETWEEN_BATCHES = 2000 // 2 seconds
+    
+    for (let i = 0; i < ungradedSubmissions.length; i += BATCH_SIZE) {
+      const batch = ungradedSubmissions.slice(i, i + BATCH_SIZE)
+      
+      // Process batch in parallel
+      const batchPromises = batch.map(async (submission) => {
+        try {
+          logger.info({ submissionId: submission.id }, 'Grading submission')
+          
+          // Grade both prompt and rubric in parallel
+          const [rubricGradeResult, promptGradeResult] = await Promise.all([
+            gradeRubric(submission),
+            gradePrompt(submission.prompt)
+          ])
+          
+          // Combine results
+          const combinedResult = {
+            ...rubricGradeResult,
+            promptGrade: promptGradeResult
+          }
+          
+          // Update submission with grading result
+          await databaseService.updateSubmission(submission.id, {
+            gradingResult: combinedResult,
+            gradedAt: new Date()
+          })
+          
+          logger.info({ 
+            submissionId: submission.id,
+            rubricScore: rubricGradeResult.score,
+            promptScore: promptGradeResult?.score
+          }, 'Successfully graded submission')
+          
+          return {
+            id: submission.id,
+            success: true,
+            rubricScore: rubricGradeResult.score,
+            promptScore: promptGradeResult?.score
+          }
+        } catch (error) {
+          logger.error({ 
+            submissionId: submission.id,
+            error: error instanceof Error ? error.message : String(error)
+          }, 'Failed to grade submission')
+          
+          return {
+            id: submission.id,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
         }
-        
-        // Update submission with grading result
-        await databaseService.updateSubmission(submission.id, {
-          gradingResult: combinedResult,
-          gradedAt: new Date()
-        })
-        
-        results.push({
-          id: submission.id,
-          success: true,
-          rubricScore: rubricGradeResult.score,
-          promptScore: promptGradeResult?.score
-        })
-        
+      })
+      
+      // Wait for batch to complete
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults)
+      
+      // Add delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < ungradedSubmissions.length) {
         logger.info({ 
-          submissionId: submission.id,
-          rubricScore: rubricGradeResult.score,
-          promptScore: promptGradeResult?.score
-        }, 'Successfully graded submission')
-        
-      } catch (error) {
-        logger.error({ 
-          submissionId: submission.id,
-          error: error instanceof Error ? error.message : String(error)
-        }, 'Failed to grade submission')
-        
-        results.push({
-          id: submission.id,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
+          processed: i + BATCH_SIZE, 
+          total: ungradedSubmissions.length 
+        }, 'Batch completed, waiting before next batch...')
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES))
       }
     }
     
@@ -133,6 +154,22 @@ export async function POST(request: NextRequest) {
 }
 
 async function gradeRubric(submission: any) {
+  // Check API key validity first
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  const isValidApiKey = apiKey && 
+                       apiKey.startsWith('sk-ant-') && 
+                       apiKey.length > 50 &&
+                       apiKey !== 'local-development-placeholder'
+  
+  if (!isValidApiKey) {
+    logger.warn({
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      submissionId: submission.id
+    }, 'Invalid API key for rubric grading')
+    throw new Error('Invalid or missing Anthropic API key')
+  }
+  
   // Prepare the data for grading
   const originalRubric = submission.criteria
     .filter((c: any) => c.source === 'ai_generated')
@@ -263,6 +300,21 @@ Provide your assessment in the specified JSON format.`
 
 async function gradePrompt(prompt: string) {
   try {
+    // Check API key validity first
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    const isValidApiKey = apiKey && 
+                         apiKey.startsWith('sk-ant-') && 
+                         apiKey.length > 50 &&
+                         apiKey !== 'local-development-placeholder'
+    
+    if (!isValidApiKey) {
+      logger.warn({
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey?.length || 0
+      }, 'Invalid API key for prompt grading')
+      return null // Return null instead of throwing to allow partial grading
+    }
+    
     // Create the grading prompt
     const gradingPrompt = `Please evaluate the following task prompt according to the evaluation framework:
 

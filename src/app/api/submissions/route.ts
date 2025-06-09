@@ -90,8 +90,18 @@ async function gradePrompt(prompt: string) {
     logger.info({ promptLength: prompt.length }, 'Starting prompt grading')
     
     // Check if we're in local development mode
-    if (process.env.ANTHROPIC_API_KEY === 'local-development-placeholder') {
-      logger.info('Using mock prompt grading for local development')
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    const isValidApiKey = apiKey && 
+                         apiKey.startsWith('sk-ant-') && 
+                         apiKey.length > 50 &&
+                         apiKey !== 'local-development-placeholder'
+    
+    if (!isValidApiKey) {
+      logger.info({
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey?.length || 0,
+        startsWithSkAnt: apiKey?.startsWith('sk-ant-') || false
+      }, 'Using mock prompt grading - invalid or missing API key')
       return createMockPromptGrade(prompt)
     }
     
@@ -149,8 +159,19 @@ async function gradeSubmission(submission: any) {
     logger.info({ submissionId: submission.id }, 'Starting submission grading')
     
     // Check if we're in local development mode
-    if (process.env.ANTHROPIC_API_KEY === 'local-development-placeholder') {
-      logger.info({ submissionId: submission.id }, 'Using mock submission grading for local development')
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    const isValidApiKey = apiKey && 
+                         apiKey.startsWith('sk-ant-') && 
+                         apiKey.length > 50 &&
+                         apiKey !== 'local-development-placeholder'
+    
+    if (!isValidApiKey) {
+      logger.info({ 
+        submissionId: submission.id,
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey?.length || 0,
+        startsWithSkAnt: apiKey?.startsWith('sk-ant-') || false
+      }, 'Using mock submission grading - invalid or missing API key')
       
       // Grade the prompt first (mock)
       const promptGrade = await gradePrompt(submission.prompt)
